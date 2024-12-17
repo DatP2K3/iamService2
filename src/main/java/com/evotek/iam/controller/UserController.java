@@ -1,5 +1,6 @@
 package com.evotek.iam.controller;
 
+import com.evotek.iam.dto.request.PasswordRequestDTO;
 import com.evotek.iam.dto.request.UserInforRequestDTO;
 import com.evotek.iam.dto.request.UserRequestDTO;
 import com.evotek.iam.dto.response.UserResponseDTO;
@@ -26,7 +27,7 @@ public class UserController {
     }
 
     @GetMapping("/users/{id}")
-    ResponseEntity<UserResponseDTO> getUserById(@RequestParam int id) {
+    ResponseEntity<UserResponseDTO> getUserById(@PathVariable int id) {
         UserResponseDTO userResponseDTO =  userService.getUserById(id);
         return ResponseEntity.ok(userResponseDTO);
     }
@@ -37,9 +38,15 @@ public class UserController {
         return ResponseEntity.ok(userResponseDTOs);
     }
 
-    @PatchMapping("/users/{id}")
-    ResponseEntity<UserResponseDTO> updateInfoUser(@RequestParam int id, @RequestBody UserInforRequestDTO userInforRequestDTO) {
+    @PatchMapping("/users/{id}/info")
+    ResponseEntity<UserResponseDTO> updateInfoUser(@PathVariable int id, @RequestBody UserInforRequestDTO userInforRequestDTO) {
         UserResponseDTO userResponseDTO =  userService.updateInfoUser(id, userInforRequestDTO);
         return ResponseEntity.ok(userResponseDTO);
+    }
+
+    @PatchMapping("/users/{id}/password")
+    ResponseEntity<Void> updatePassword(@PathVariable int id, @RequestBody PasswordRequestDTO passwordRequestDTO) {
+        userService.updatePassword(id, passwordRequestDTO);
+        return ResponseEntity.ok().build();
     }
 }

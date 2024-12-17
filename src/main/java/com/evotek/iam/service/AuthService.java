@@ -1,19 +1,16 @@
 package com.evotek.iam.service;
 
-import com.evotek.iam.dto.request.AuthenticationRequestDTO;
-import com.evotek.iam.dto.request.IntrospectRequestDTO;
-import com.evotek.iam.dto.request.LogoutRequestDTO;
-import com.evotek.iam.dto.request.RefreshRequestDTO;
+import com.evotek.iam.dto.request.*;
 import com.evotek.iam.dto.response.AuthenticationResponseDTO;
 import com.evotek.iam.dto.response.IntrospectResponseDTO;
 import com.evotek.iam.exception.ErrorCode;
+import com.evotek.iam.exception.ResourceNotFoundException;
 import com.evotek.iam.model.InvalidatedToken;
 import com.evotek.iam.model.Role;
 import com.evotek.iam.model.User;
 import com.evotek.iam.repository.InvalidatedTokenRepository;
 import com.evotek.iam.repository.UserRepository;
 import com.nimbusds.jose.*;
-import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -22,11 +19,13 @@ import com.evotek.iam.exception.AuthException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -46,6 +45,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final InvalidatedTokenRepository invalidatedTokenRepository;
+    private final EmailService emailService;
+    private final RedisTemplate redisTemplate;
 
     @Value("${jwt.private-key}")
     private String PRIVATE_KEY;
@@ -72,7 +73,7 @@ public class AuthService {
         return IntrospectResponseDTO.builder().valid(isValid).build();
     }
 
-    public AuthenticationResponseDTO authenticate(AuthenticationRequestDTO request) {
+    public void authenticate(AuthenticationRequestDTO request) {
         var user = userRepository
                 .findByEmail(request.getUsername())
                 .orElseThrow(() -> new AuthException(ErrorCode.USER_NOT_EXISTED));
@@ -80,7 +81,29 @@ public class AuthService {
 
         if (!authenticated) throw new AuthException(ErrorCode.UNAUTHENTICATED);
 
-        var token = generateToken(user);
+        SecureRandom random = new SecureRandom();
+        int otp = random.nextInt(900000) + 100000;
+
+        redisTemplate.opsForValue().set(String.valueOf(otp), user.getEmail());
+
+        emailService.sendMailOtp(user.getEmail(), String.valueOf(otp));
+    }
+
+    public AuthenticationResponseDTO verifyOtp(VerifyOtpRequestDTO verifyOtpRequestDTO) {
+        if (!redisTemplate.hasKey(verifyOtpRequestDTO.getOtp())) {
+            throw new AuthException(ErrorCode.UNAUTHENTICATED);
+        }
+        if(!redisTemplate.opsForValue().get(verifyOtpRequestDTO.getOtp()).equals(verifyOtpRequestDTO.getEmail())){
+            throw new AuthException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        User user = userRepository
+                .findByEmail(redisTemplate.opsForValue().get(verifyOtpRequestDTO.getOtp()).toString())
+                .orElseThrow(() -> new AuthException(ErrorCode.USER_NOT_EXISTED));
+
+        redisTemplate.delete(verifyOtpRequestDTO.getOtp());
+
+        var token = generateToken(user, false);
 
         return AuthenticationResponseDTO.builder().token(token).authenticated(true).build();
     }
@@ -117,7 +140,7 @@ public class AuthService {
         var user =
                 userRepository.findByEmail(username).orElseThrow(() -> new AuthException(ErrorCode.UNAUTHENTICATED));
 
-        var token = generateToken(user);
+        var token = generateToken(user, false);
 
         return AuthenticationResponseDTO.builder().token(token).authenticated(true).build();
     }
@@ -125,10 +148,7 @@ public class AuthService {
     private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException{
         RSAPublicKey publicKey = null;
         try {
-            //Chuyển PUBLIC_KEY từ Base64 thành mảng byte
             byte[] publicKeyBytes = Base64.getDecoder().decode(PUBLIC_KEY);
-
-            // Sử dụng KeyFactory để tạo RSAPublicKey từ mảng byte
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
             publicKey = (RSAPublicKey) keyFactory.generatePublic(keySpec);
@@ -155,15 +175,17 @@ public class AuthService {
         return signedJWT;
     }
 
-    private String generateToken(User user) {
+    private String generateToken(User user, boolean isforgotPassword) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.RS256);
-
+        Date expirationTime = new Date(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli());
+        if(isforgotPassword){
+            expirationTime = new Date(Instant.now().plus(15, ChronoUnit.MINUTES).toEpochMilli());
+        }
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getEmail())
                 .issuer("evotek.iam.com")
                 .issueTime(new Date())
-                .expirationTime(new Date(
-                        Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
+                .expirationTime(expirationTime)
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
                 .build();
@@ -175,13 +197,8 @@ public class AuthService {
         RSAPrivateKey privateKey = null;
         try {
             byte[] decodedKey = Base64.getDecoder().decode(PRIVATE_KEY);
-
-            // Sử dụng PKCS8EncodedKeySpec để tạo đối tượng PrivateKey
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
-
-            // Tạo đối tượng PrivateKey bằng KeyFactory
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-
             privateKey = (RSAPrivateKey) keyFactory.generatePrivate(keySpec);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException("Error creating RSAPublicKey from Base64", e);
@@ -206,6 +223,37 @@ public class AuthService {
         StringBuilder scopeBuilder = new StringBuilder();
         scopeBuilder.append(role.getName());
         return scopeBuilder.toString();
+    }
+
+    public void requestPasswordReset(String email) {
+        try {
+            User user = userRepository
+                    .findByEmail(email)
+                    .orElseThrow(() -> new AuthException(ErrorCode.USER_NOT_EXISTED));
+            String token = generateToken(user, true);
+
+            String resetLink = "http://127.0.0.1:5500/resetPassword.html?token=" + token;
+
+            emailService.sendMailForResetPassWord(email, resetLink);
+        } catch (ResourceNotFoundException ex) {
+            throw new AuthException(ErrorCode.USER_NOT_EXISTED);
+        } catch (Exception ex) {
+            throw new AuthException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    public void resetPassword(String token, String newPassword){
+        try {
+            SignedJWT signedJWT = verifyToken(token, false);
+            String email = signedJWT.getJWTClaimsSet().getSubject();
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new AuthException(ErrorCode.USER_NOT_EXISTED));
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+        } catch (AuthException ex) {
+            throw new AuthException(ErrorCode.INVALID_KEY);
+        } catch (Exception ex) {
+            throw new AuthException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 }
 

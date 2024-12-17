@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,6 +57,10 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
         if (userInforRequestDTO.getFullName() != null) {
             user.setFullName(userInforRequestDTO.getFullName());
+        }
+
+        if (userInforRequestDTO.getBirthDate() != null) {
+            user.setBirthDate(LocalDate.parse(userInforRequestDTO.getBirthDate()));
         }
         if (userInforRequestDTO.getPhone() != null) {
             user.setPhone(userInforRequestDTO.getPhone());
