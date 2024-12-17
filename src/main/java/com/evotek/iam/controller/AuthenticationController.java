@@ -1,19 +1,13 @@
 package com.evotek.iam.controller;
 
-import com.evotek.iam.dto.request.AuthenticationRequestDTO;
-import com.evotek.iam.dto.request.IntrospectRequestDTO;
-import com.evotek.iam.dto.request.LogoutRequestDTO;
-import com.evotek.iam.dto.request.RefreshRequestDTO;
+import com.evotek.iam.dto.request.*;
 import com.evotek.iam.dto.response.AuthenticationResponseDTO;
 import com.evotek.iam.dto.response.IntrospectResponseDTO;
 import com.evotek.iam.service.AuthService;
 import com.nimbusds.jose.JOSEException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
 
@@ -24,8 +18,14 @@ public class AuthenticationController {
     private final AuthService authService;
 
     @PostMapping("/token")
-    public ResponseEntity<AuthenticationResponseDTO> authenticate(@RequestBody AuthenticationRequestDTO request) {
-        AuthenticationResponseDTO result = authService.authenticate(request);
+    public ResponseEntity<String> authenticate(@RequestBody AuthenticationRequestDTO request) {
+        authService.authenticate(request);
+        return ResponseEntity.ok("Otp sent to email");
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<AuthenticationResponseDTO> verifyOtp(@RequestBody VerifyOtpRequestDTO verifyOtpRequestDTO){
+        AuthenticationResponseDTO result = authService.verifyOtp(verifyOtpRequestDTO);
         return ResponseEntity.ok(result);
     }
 
@@ -48,5 +48,17 @@ public class AuthenticationController {
             throws ParseException, JOSEException {
         authService.logout(request);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> requestPasswordReset(@RequestParam String email) {
+        authService.requestPasswordReset(email);
+        return ResponseEntity.ok("Reset password link sent to email");
+    }
+
+    @PatchMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestBody PasswordRequestDTO passwordRequestDTO) {
+        authService.resetPassword(token, passwordRequestDTO.getNewPassword());
+        return ResponseEntity.ok("Password successfully reset");
     }
 }
