@@ -5,7 +5,9 @@ import com.evotek.iam.dto.response.AuthenticationResponseDTO;
 import com.evotek.iam.dto.response.IntrospectResponseDTO;
 import com.evotek.iam.service.AuthService;
 import com.nimbusds.jose.JOSEException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,14 +39,14 @@ public class AuthenticationController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthenticationResponseDTO> authenticate(@RequestBody RefreshRequestDTO request)
+    public ResponseEntity<AuthenticationResponseDTO> authenticate(HttpServletRequest request)
             throws ParseException, JOSEException {
         AuthenticationResponseDTO result = authService.refreshToken(request);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody LogoutRequestDTO request)
+    public ResponseEntity<Void> logout(HttpServletRequest request)
             throws ParseException, JOSEException {
         authService.logout(request);
         return ResponseEntity.noContent().build();

@@ -27,3 +27,4 @@ public enum ErrorCode {
     private final String message;
     private final HttpStatusCode statusCode;
 }
+//tìm hiểu global exception
