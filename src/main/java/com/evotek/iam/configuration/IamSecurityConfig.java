@@ -29,7 +29,7 @@ public class IamSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request -> request
-                .requestMatchers(HttpMethod.DELETE,"/api/users/**").hasRole("ADMIN")
+//                .requestMatchers(HttpMethod.DELETE,"/api/users/**").hasRole("ADMIN")
                 .anyRequest().permitAll());
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer

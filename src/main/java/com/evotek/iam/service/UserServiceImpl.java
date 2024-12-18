@@ -9,14 +9,19 @@ import com.evotek.iam.exception.UserAlreadyExistsException;
 import com.evotek.iam.mapper.UserMapper;
 import com.evotek.iam.model.Role;
 import com.evotek.iam.model.User;
+import com.evotek.iam.model.UserActivityLog;
 import com.evotek.iam.repository.RoleRepository;
+import com.evotek.iam.repository.UserActivityLogRepository;
 import com.evotek.iam.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +31,9 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final CloudinaryService cloudinaryService;
+    private final EmailService emailService;
+    private final UserActivityLogRepository userActivityLogRepository;
 
     @Override
     public UserResponseDTO getUserById(int id) {
@@ -58,7 +66,6 @@ public class UserServiceImpl implements UserService {
         if (userInforRequestDTO.getFullName() != null) {
             user.setFullName(userInforRequestDTO.getFullName());
         }
-
         if (userInforRequestDTO.getBirthDate() != null) {
             user.setBirthDate(LocalDate.parse(userInforRequestDTO.getBirthDate()));
         }
@@ -68,6 +75,7 @@ public class UserServiceImpl implements UserService {
         if (userInforRequestDTO.getAddress() != null) {
             user.setAddress(userInforRequestDTO.getAddress());
         }
+        emailService.sendMailAlert(user.getEmail(), "change_info");
         return userMapper.userToUserResponseDTO(userRepository.save(user));
     }
 
@@ -77,16 +85,27 @@ public class UserServiceImpl implements UserService {
         if(passwordEncoder.matches(passwordRequestDTO.getOldPassword(), user.getPassword())){
             user.setPassword(passwordEncoder.encode(passwordRequestDTO.getNewPassword()));
             userRepository.save(user);
+            emailService.sendMailAlert(user.getEmail(), "change_password");
+
+            UserActivityLog log = new UserActivityLog();
+            log.setUserId(user.getId());
+            log.setActivity("Change PassWord");
+            log.setCreatedAt(LocalDateTime.now());
+            userActivityLogRepository.save(log);
         } else {
             throw new ResourceNotFoundException("Old password is incorrect");
         }
     }
 
     @Override
-    public void updateAvatar(int id, String avatar) {
+    public String updateAvatar(int id, MultipartFile file) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
+        Map data = this.cloudinaryService.upLoadFile(file);
+        String avatar = (String) data.get("url");
         user.setAvatar(avatar);
         userRepository.save(user);
+        emailService.sendMailAlert(user.getEmail(), "change_info");
+        return avatar;
     }
 
     @Override

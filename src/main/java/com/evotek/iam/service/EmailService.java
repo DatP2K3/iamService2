@@ -40,4 +40,33 @@ public class EmailService {
             throw new RuntimeException("Failed to send email", e);
         }
     }
+
+    public void sendMailAlert(String toEmail, String type) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        switch (type) {
+            case "signin":
+                message.setSubject("Chúc mừng bạn đăng ký thành công");
+                message.setText("Chúc mừng bạn đăng ký thành công. Tài khoản của bạn đã có thể đăng nhập vào hệ thống");
+                break;
+            case "change_info":
+                message.setSubject("Thay đổi thông tin thành công");
+                message.setText("Chúc mừng bạn đã thay đổi thông tin thành công");
+                break;
+            case "change_password":
+                message.setSubject("Thay đổi mật khẩu thành công");
+                message.setText("Chúc mừng bạn đã thay đổi mật khẩu thành công");
+                break;
+            default:
+                message.setSubject("Alert Iam");
+                message.setText("Tài khoản của bạn đã thực hiện thay đổi thành công");
+        }
+        try {
+            mailSender.send(message);
+        } catch (MailException e) {
+            System.err.println("Error sending email: " + e.getMessage());
+            throw new RuntimeException("Failed to send email", e);
+        }
+    }
 }

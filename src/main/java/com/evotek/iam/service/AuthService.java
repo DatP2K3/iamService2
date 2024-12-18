@@ -1,5 +1,6 @@
 package com.evotek.iam.service;
 
+import com.evotek.iam.configuration.TokenProvider;
 import com.evotek.iam.dto.request.*;
 import com.evotek.iam.dto.response.AuthenticationResponseDTO;
 import com.evotek.iam.dto.response.IntrospectResponseDTO;
@@ -8,7 +9,9 @@ import com.evotek.iam.exception.ResourceNotFoundException;
 import com.evotek.iam.model.InvalidatedToken;
 import com.evotek.iam.model.Role;
 import com.evotek.iam.model.User;
+import com.evotek.iam.model.UserActivityLog;
 import com.evotek.iam.repository.InvalidatedTokenRepository;
+import com.evotek.iam.repository.UserActivityLogRepository;
 import com.evotek.iam.repository.UserRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSASSASigner;
@@ -16,6 +19,7 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.evotek.iam.exception.AuthException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,11 +37,12 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.ParseException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
-
+//Áp Dụng lưu token ko hợp lệ vào redis, thời gia tương ứng với thời gian hết hạn của token
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -47,12 +52,14 @@ public class AuthService {
     private final InvalidatedTokenRepository invalidatedTokenRepository;
     private final EmailService emailService;
     private final RedisTemplate redisTemplate;
+    private final UserActivityLogRepository userActivityLogRepository;
+    private final TokenProvider tokenProvider;
 
-    @Value("${jwt.private-key}")
-    private String PRIVATE_KEY;
-
-    @Value("${jwt.public-key}")
-    private String PUBLIC_KEY;
+//    @Value("${jwt.private-key}")
+//    private String PRIVATE_KEY;
+//
+//    @Value("${jwt.public-key}")
+//    private String PUBLIC_KEY;
 
     @Value("${jwt.valid-duration}")
     private long VALID_DURATION;
@@ -105,12 +112,23 @@ public class AuthService {
 
         var token = generateToken(user, false);
 
+        UserActivityLog log = new UserActivityLog();
+        log.setUserId(user.getId());
+        log.setActivity("Login");
+        log.setCreatedAt(LocalDateTime.now());
+        userActivityLogRepository.save(log);
+
         return AuthenticationResponseDTO.builder().token(token).authenticated(true).build();
     }
 
-    public void logout(LogoutRequestDTO request) throws ParseException, JOSEException {
+    public void logout(HttpServletRequest request) throws ParseException, JOSEException {
         try {
-            var signToken = verifyToken(request.getToken(), true);
+            String token = request.getHeader("Authorization");
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            var signToken = verifyToken(token, true);
 
             String jit = signToken.getJWTClaimsSet().getJWTID();
             Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
@@ -119,13 +137,24 @@ public class AuthService {
                     InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
 
             invalidatedTokenRepository.save(invalidatedToken);
+
+            UserActivityLog log = new UserActivityLog();
+            log.setUserId(signToken.getJWTClaimsSet().getIntegerClaim("userId"));
+            log.setActivity("Logout");
+            log.setCreatedAt(LocalDateTime.now());
+            userActivityLogRepository.save(log);
         } catch (AuthException exception) {
             log.info("Token already expired");
         }
     }
 
-    public AuthenticationResponseDTO refreshToken(RefreshRequestDTO request) throws ParseException, JOSEException {
-        var signedJWT = verifyToken(request.getToken(), true);
+    public AuthenticationResponseDTO refreshToken(HttpServletRequest request) throws ParseException, JOSEException {
+        String oldToken = request.getHeader("Authorization");
+        if (oldToken != null && oldToken.startsWith("Bearer ")) {
+            oldToken = oldToken.substring(7);
+        }
+
+        var signedJWT = verifyToken(oldToken, true);
 
         var jit = signedJWT.getJWTClaimsSet().getJWTID();
         var expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
@@ -146,16 +175,7 @@ public class AuthService {
     }
 
     private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException{
-        RSAPublicKey publicKey = null;
-        try {
-            byte[] publicKeyBytes = Base64.getDecoder().decode(PUBLIC_KEY);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
-            publicKey = (RSAPublicKey) keyFactory.generatePublic(keySpec);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new RuntimeException("Error creating RSAPublicKey from Base64", e);
-        }
-        JWSVerifier verifier = new RSASSAVerifier(publicKey);
+        JWSVerifier verifier = new RSASSAVerifier((RSAPublicKey) tokenProvider.getKeyPair().getPublic());
         SignedJWT signedJWT = SignedJWT.parse(token);
         Date expiryTime = (isRefresh)
                 ? new Date(signedJWT
@@ -188,23 +208,14 @@ public class AuthService {
                 .expirationTime(expirationTime)
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
+                .claim("userId", user.getId())
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
 
         JWSObject jwsObject = new JWSObject(header, payload);
 
-        RSAPrivateKey privateKey = null;
-        try {
-            byte[] decodedKey = Base64.getDecoder().decode(PRIVATE_KEY);
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            privateKey = (RSAPrivateKey) keyFactory.generatePrivate(keySpec);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new RuntimeException("Error creating RSAPublicKey from Base64", e);
-        }
-
-        RSASSASigner signer = new RSASSASigner(privateKey);
+        RSASSASigner signer = new RSASSASigner(tokenProvider.getKeyPair().getPrivate());
 
         try {
             jwsObject.sign(signer);
@@ -249,6 +260,14 @@ public class AuthService {
             User user = userRepository.findByEmail(email).orElseThrow(() -> new AuthException(ErrorCode.USER_NOT_EXISTED));
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
+            emailService.sendMailAlert(email, "change_password");
+
+            UserActivityLog log = new UserActivityLog();
+            log.setUserId(user.getId());
+            log.setActivity("Reset PassWord");
+            log.setCreatedAt(LocalDateTime.now());
+            userActivityLogRepository.save(log);
+
         } catch (AuthException ex) {
             throw new AuthException(ErrorCode.INVALID_KEY);
         } catch (Exception ex) {
