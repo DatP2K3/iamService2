@@ -20,16 +20,12 @@ import org.springframework.web.filter.CorsFilter;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class IamSecurityConfig {
-    private final String[] PUBLIC_ENDPOINTS = {
-            "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh"
-    };
-
     private final CustomJwtDecoder customJwtDecoder;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request -> request
-//                .requestMatchers(HttpMethod.DELETE,"/api/users/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE,"/api/users/**").hasRole("ADMIN")
                 .anyRequest().permitAll());
 
         httpSecurity.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
@@ -45,7 +41,7 @@ public class IamSecurityConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
-        corsConfiguration.addAllowedOrigin("*");
+        corsConfiguration.addAllowedOrigin("http://127.0.0.1:5500/");
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");
 

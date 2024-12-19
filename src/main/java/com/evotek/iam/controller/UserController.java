@@ -61,4 +61,10 @@ public class UserController {
         String avatar = userService.updateAvatar(id, file);
         return ResponseEntity.ok(avatar);
     }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable int id) {
+        userService.deleteUser(id);
+        return ResponseEntity.ok().build();
+    }
 }
