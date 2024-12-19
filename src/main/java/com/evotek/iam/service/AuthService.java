@@ -6,11 +6,9 @@ import com.evotek.iam.dto.response.AuthenticationResponseDTO;
 import com.evotek.iam.dto.response.IntrospectResponseDTO;
 import com.evotek.iam.exception.ErrorCode;
 import com.evotek.iam.exception.ResourceNotFoundException;
-import com.evotek.iam.model.InvalidatedToken;
 import com.evotek.iam.model.Role;
 import com.evotek.iam.model.User;
 import com.evotek.iam.model.UserActivityLog;
-import com.evotek.iam.repository.InvalidatedTokenRepository;
 import com.evotek.iam.repository.UserActivityLogRepository;
 import com.evotek.iam.repository.UserRepository;
 import com.nimbusds.jose.*;
@@ -27,21 +25,16 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
 //Áp Dụng lưu token ko hợp lệ vào redis, thời gia tương ứng với thời gian hết hạn của token
 @Service
 @RequiredArgsConstructor
@@ -49,7 +42,6 @@ import java.util.UUID;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final InvalidatedTokenRepository invalidatedTokenRepository;
     private final EmailService emailService;
     private final RedisTemplate redisTemplate;
     private final UserActivityLogRepository userActivityLogRepository;
@@ -72,7 +64,7 @@ public class AuthService {
         boolean isValid = true;
 
         try {
-            verifyToken(token, false);
+            verifyToken(token);
         } catch (AuthException e) {
             isValid = false;
         }
@@ -91,7 +83,7 @@ public class AuthService {
         SecureRandom random = new SecureRandom();
         int otp = random.nextInt(900000) + 100000;
 
-        redisTemplate.opsForValue().set(String.valueOf(otp), user.getEmail());
+        redisTemplate.opsForValue().set(String.valueOf(otp), user.getEmail(), 300, TimeUnit.SECONDS);
 
         emailService.sendMailOtp(user.getEmail(), String.valueOf(otp));
     }
@@ -110,36 +102,40 @@ public class AuthService {
 
         redisTemplate.delete(verifyOtpRequestDTO.getOtp());
 
-        var token = generateToken(user, false);
-
+        var accessToken = generateToken(user, false, false);
+        var refreshToken = generateToken(user, false, true);
         UserActivityLog log = new UserActivityLog();
         log.setUserId(user.getId());
         log.setActivity("Login");
         log.setCreatedAt(LocalDateTime.now());
         userActivityLogRepository.save(log);
 
-        return AuthenticationResponseDTO.builder().token(token).authenticated(true).build();
+        return AuthenticationResponseDTO.builder().accessToken(accessToken).refreshToken(refreshToken).authenticated(true).build();
     }
 
-    public void logout(HttpServletRequest request) throws ParseException, JOSEException {
+    public void logout(HttpServletRequest request, IntrospectRequestDTO refreshToken) throws ParseException, JOSEException {
         try {
             String token = request.getHeader("Authorization");
             if (token != null && token.startsWith("Bearer ")) {
                 token = token.substring(7);
             }
 
-            var signToken = verifyToken(token, true);
+            var signedJWT_access = verifyToken(token);
+            var access_jit = signedJWT_access.getJWTClaimsSet().getJWTID();
+            var access_expiryTime = signedJWT_access.getJWTClaimsSet().getExpirationTime();
+            var access_expiryTimeMillis = signedJWT_access.getJWTClaimsSet().getExpirationTime().getTime();
+            long currentTimeMillis = System.currentTimeMillis();
+            long access_remainingTimeMillis = access_expiryTimeMillis - currentTimeMillis;
+            var signedJWT_refresh = verifyToken(refreshToken.getToken());
+            var refresh_jit = signedJWT_refresh.getJWTClaimsSet().getJWTID();
+            long refresh_remainingTimeMillis = currentTimeMillis + REFRESHABLE_DURATION * 1000;
+            var refresh_expiryTime = new Date(refresh_remainingTimeMillis);
 
-            String jit = signToken.getJWTClaimsSet().getJWTID();
-            Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
-
-            InvalidatedToken invalidatedToken =
-                    InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
-
-            invalidatedTokenRepository.save(invalidatedToken);
+            redisTemplate.opsForValue().set(access_jit, access_expiryTime, access_remainingTimeMillis, TimeUnit.MILLISECONDS);
+            redisTemplate.opsForValue().set(refresh_jit, refresh_expiryTime, refresh_remainingTimeMillis, TimeUnit.MILLISECONDS);
 
             UserActivityLog log = new UserActivityLog();
-            log.setUserId(signToken.getJWTClaimsSet().getIntegerClaim("userId"));
+            log.setUserId(signedJWT_access.getJWTClaimsSet().getIntegerClaim("userId"));
             log.setActivity("Logout");
             log.setCreatedAt(LocalDateTime.now());
             userActivityLogRepository.save(log);
@@ -149,35 +145,23 @@ public class AuthService {
     }
 
     public AuthenticationResponseDTO refreshToken(HttpServletRequest request) throws ParseException, JOSEException {
-        String oldToken = request.getHeader("Authorization");
-        if (oldToken != null && oldToken.startsWith("Bearer ")) {
-            oldToken = oldToken.substring(7);
+        String refreshToken = request.getHeader("Authorization");
+        if (refreshToken != null && refreshToken.startsWith("Bearer ")) {
+            refreshToken = refreshToken.substring(7);
         }
 
-        var signedJWT = verifyToken(oldToken, true);
-
-        var jit = signedJWT.getJWTClaimsSet().getJWTID();
-        var expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-
-        InvalidatedToken invalidatedToken =
-                InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
-
-        invalidatedTokenRepository.save(invalidatedToken);
-
+        var signedJWT = verifyToken(refreshToken);
         var username = signedJWT.getJWTClaimsSet().getSubject();
+        var user = userRepository.findByEmail(username).orElseThrow(() -> new AuthException(ErrorCode.UNAUTHENTICATED));
+        var accessToken = generateToken(user, false, false);
 
-        var user =
-                userRepository.findByEmail(username).orElseThrow(() -> new AuthException(ErrorCode.UNAUTHENTICATED));
-
-        var token = generateToken(user, false);
-
-        return AuthenticationResponseDTO.builder().token(token).authenticated(true).build();
+        return AuthenticationResponseDTO.builder().accessToken(accessToken).authenticated(true).build();
     }
 
-    private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException{
+    private SignedJWT verifyToken(String token) throws JOSEException, ParseException{
         JWSVerifier verifier = new RSASSAVerifier((RSAPublicKey) tokenProvider.getKeyPair().getPublic());
         SignedJWT signedJWT = SignedJWT.parse(token);
-        Date expiryTime = (isRefresh)
+        Date expiryTime = (signedJWT.getJWTClaimsSet().getExpirationTime() == null)
                 ? new Date(signedJWT
                 .getJWTClaimsSet()
                 .getIssueTime()
@@ -190,27 +174,33 @@ public class AuthService {
 
         if (!(verified && expiryTime.after(new Date()))) throw new AuthException(ErrorCode.UNAUTHENTICATED);
 
-        if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
+        if (redisTemplate.hasKey(signedJWT.getJWTClaimsSet().getJWTID())) {
             throw new AuthException(ErrorCode.UNAUTHENTICATED);
+        }
         return signedJWT;
     }
 
-    private String generateToken(User user, boolean isforgotPassword) {
+    private String generateToken(User user, boolean isforgotPassword, boolean isRefresh) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.RS256);
-        Date expirationTime = new Date(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli());
-        if(isforgotPassword){
-            expirationTime = new Date(Instant.now().plus(15, ChronoUnit.MINUTES).toEpochMilli());
-        }
-        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+
+        JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
                 .subject(user.getEmail())
                 .issuer("evotek.iam.com")
                 .issueTime(new Date())
-                .expirationTime(expirationTime)
                 .jwtID(UUID.randomUUID().toString())
-                .claim("scope", buildScope(user))
-                .claim("userId", user.getId())
-                .build();
+                .claim("userId", user.getId());
 
+
+        if (!isRefresh) {
+            Date expirationTime = new Date(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli());
+            if(isforgotPassword){
+                expirationTime = new Date(Instant.now().plus(15, ChronoUnit.MINUTES).toEpochMilli());
+            }
+
+            claimsBuilder.claim("scope", buildScope(user));
+            claimsBuilder.expirationTime(expirationTime);
+        }
+        JWTClaimsSet jwtClaimsSet = claimsBuilder.build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
 
         JWSObject jwsObject = new JWSObject(header, payload);
@@ -241,7 +231,7 @@ public class AuthService {
             User user = userRepository
                     .findByEmail(email)
                     .orElseThrow(() -> new AuthException(ErrorCode.USER_NOT_EXISTED));
-            String token = generateToken(user, true);
+            String token = generateToken(user, true, false);
 
             String resetLink = "http://127.0.0.1:5500/resetPassword.html?token=" + token;
 
@@ -255,7 +245,7 @@ public class AuthService {
 
     public void resetPassword(String token, String newPassword){
         try {
-            SignedJWT signedJWT = verifyToken(token, false);
+            SignedJWT signedJWT = verifyToken(token);
             String email = signedJWT.getJWTClaimsSet().getSubject();
             User user = userRepository.findByEmail(email).orElseThrow(() -> new AuthException(ErrorCode.USER_NOT_EXISTED));
             user.setPassword(passwordEncoder.encode(newPassword));
@@ -275,4 +265,5 @@ public class AuthService {
         }
     }
 }
+
 

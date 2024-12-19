@@ -46,9 +46,9 @@ public class AuthenticationController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request)
+    public ResponseEntity<Void> logout(HttpServletRequest request, @RequestBody IntrospectRequestDTO refreshToken)
             throws ParseException, JOSEException {
-        authService.logout(request);
+        authService.logout(request, refreshToken);
         return ResponseEntity.noContent().build();
     }
 

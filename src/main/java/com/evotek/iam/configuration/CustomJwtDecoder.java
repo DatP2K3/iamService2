@@ -42,8 +42,7 @@ public class CustomJwtDecoder implements JwtDecoder {
         }
 
         if (Objects.isNull(nimbusJwtDecoder)) {
-            RSAPublicKey publicKey = null;
-                nimbusJwtDecoder = NimbusJwtDecoder.withPublicKey((RSAPublicKey) tokenProvider.getKeyPair().getPublic()).build();
+            nimbusJwtDecoder = NimbusJwtDecoder.withPublicKey((RSAPublicKey) tokenProvider.getKeyPair().getPublic()).build();
         }
 
         return nimbusJwtDecoder.decode(token);

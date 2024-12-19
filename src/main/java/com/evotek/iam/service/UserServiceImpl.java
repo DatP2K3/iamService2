@@ -57,6 +57,7 @@ public class UserServiceImpl implements UserService {
         Role role = roleRepository.findById(userRequestDTO.getRoleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found with id: " + userRequestDTO.getRoleId()));
         role.assignRoleToUser(user);
+        emailService.sendMailAlert(user.getEmail(), "signin");
         return userMapper.userToUserResponseDTO(userRepository.save(user));
     }
 
@@ -112,7 +113,7 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(int id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
         Role role = user.getRole();
-        role.assignRoleToUser(null);
+        role.removeUserFromRole(user);
         userRepository.delete(user);
     }
 }
