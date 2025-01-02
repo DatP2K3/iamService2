@@ -10,7 +10,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class VerifyOtpRequestDTO {
+public class LoginRequest {
     String username;
-    String otp;
+    String password;
 }

@@ -1,21 +1,17 @@
 package com.evotek.iam.dto.response;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserResponseDTO {
-    int id;
-    String fullName;
-    String birthDate;
-    String phone;
-    String address;
+    int selfUserID;
+    String keyCloakUserID;
     String email;
-    String avatar;
-    int roleId;
+    String username;
+    String firstName;
+    String lastName;
 }
