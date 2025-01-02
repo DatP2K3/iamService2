@@ -1,4 +1,4 @@
-package com.evotek.iam.service;
+package com.evotek.iam.service.common;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
