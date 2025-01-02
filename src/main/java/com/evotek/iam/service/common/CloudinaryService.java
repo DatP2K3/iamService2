@@ -1,4 +1,4 @@
-package com.evotek.iam.service;
+package com.evotek.iam.service.common;
 
 import com.cloudinary.Cloudinary;
 import lombok.RequiredArgsConstructor;

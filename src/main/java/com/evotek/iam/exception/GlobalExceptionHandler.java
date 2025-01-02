@@ -30,8 +30,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
-    @ExceptionHandler(AuthException.class)
-    public ResponseEntity<Map<String, Object>> handleAuthException(AuthException ex) {
+    @ExceptionHandler(AppException.class)
+    public ResponseEntity<Map<String, Object>> handleAppException(AppException ex) {
         Map<String, Object> response = new HashMap<>();
         response.put("error", ex.getErrorCode().name());
         response.put("message", ex.getMessage());
@@ -39,6 +39,7 @@ public class GlobalExceptionHandler {
         response.put("timestamp", System.currentTimeMillis());
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleException(Exception ex) {
         Map<String, Object> response = new HashMap<>();
