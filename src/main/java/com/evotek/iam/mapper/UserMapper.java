@@ -8,7 +8,8 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
-    @Mapping(source = "role.id", target = "roleId")
+//    @Mapping(source = "role.id", target = "roleId")
     UserResponseDTO userToUserResponseDTO(User user);
+    @Mapping(target = "locked", constant = "false")
     User UserRequestDTOToUser(UserRequestDTO userRequestDTO);
 }

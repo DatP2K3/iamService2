@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -15,32 +16,28 @@ import java.time.LocalDate;
 @Table(name = "users")
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    int id;
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @Column(name = "self_user_id")
+    int selfUserID;
 
-    @Column(name = "full_name")
-    String fullName;
+    @Column(name = "keycloak_user_id", unique = true)
+    String keyCloakUserID;
 
-    @Column(name = "birth_date")
-    LocalDate birthDate;
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
 
-    @Column(name = "phone")
-    String phone;
+    @Column(name = "email", unique = true)
+    private String email;
 
-    @Column(name = "address")
-    String address;
+    @Column(name = "first_name")
+    private String firstName;
 
-    @Column(name = "email")
-    String email;
+    @Column(name = "last_name")
+    private String lastName;
 
     @Column(name = "password")
-    String password;
+    private String password;
 
-    @Column(name = "avatar")
-    String avatar;
-
-    @ManyToOne(cascade = {CascadeType.PERSIST,
-            CascadeType.MERGE, CascadeType.DETACH})
-    Role role;
+    @Column(name="locked", nullable = false)
+    private boolean locked = false;
 }

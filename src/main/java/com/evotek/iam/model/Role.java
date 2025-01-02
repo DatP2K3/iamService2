@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -20,23 +21,15 @@ public class Role {
     @Column(name = "id")
     int id;
 
-    @Column(name = "name")
-    String name;
+    @Column(name = "name", nullable = false, unique = true)
+    private String name;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE,
-            CascadeType.DETACH, CascadeType.REFRESH})
-    @JoinColumn(name = "role_id")
-    Collection<User> users = new HashSet<>();
+    @Column(name = "description")
+    private String description;
 
-    public void assignRoleToUser(User user){
-        user.setRole(this);
-        if(users == null){
-            users = new HashSet<>();
-        }
-        this.getUsers().add(user);
-    }
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    public void removeUserFromRole(User user){
-        this.getUsers().remove(user);
-    }
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
 }
