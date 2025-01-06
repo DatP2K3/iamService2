@@ -3,6 +3,9 @@ package com.evotek.iam.model;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,16 +15,16 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "self_user_id")
-    int selfUserID;
+    private int selfUserID;
 
     @Column(name = "keycloak_user_id", unique = true)
-    String keyCloakUserID;
+    private String keyCloakUserID;
 
     @Column(name = "username", nullable = false, unique = true)
     private String username;
@@ -40,4 +43,15 @@ public class User {
 
     @Column(name="locked", nullable = false)
     private boolean locked = false;
+
+    @Column(name="deleted", nullable = false)
+    private boolean deleted = false;
+
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
+    private String createdBy;
+
+    @LastModifiedBy
+    @Column(name = "last_modified_by")
+    private String lastModifiedBy;
 }

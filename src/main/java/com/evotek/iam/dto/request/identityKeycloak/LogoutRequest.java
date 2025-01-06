@@ -7,9 +7,8 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class LogoutRequest {
-    String client_id;
-    String client_secret;
-    String refresh_token;
+    private String client_id;
+    private String client_secret;
+    private String refresh_token;
 }

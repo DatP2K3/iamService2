@@ -7,10 +7,9 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class RefreshTokenRequest {
-    String client_id;
-    String client_secret;
-    String grant_type;
-    String refresh_token;
+    private String client_id;
+    private String client_secret;
+    private String grant_type;
+    private String refresh_token;
 }

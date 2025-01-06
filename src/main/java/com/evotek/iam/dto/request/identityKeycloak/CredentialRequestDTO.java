@@ -7,9 +7,8 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CredentialRequestDTO {
-    String type;
-    String value;
-    boolean temporary;
+    private String type;
+    private String value;
+    private boolean temporary;
 }

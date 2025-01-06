@@ -7,7 +7,6 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class DeleteUserRequest {
-    String deletedBody;
+    private String deletedBody;
 }

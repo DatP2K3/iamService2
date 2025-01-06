@@ -2,13 +2,10 @@ package com.evotek.iam.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.util.Collection;
-import java.util.HashSet;
 
 @Entity
 @Data
@@ -16,18 +13,18 @@ import java.util.HashSet;
 @AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "roles")
-public class Role {
+@Table(name = "permissions")
+public class Permission {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "id")
     private int id;
 
-    @Column(name = "name", nullable = false, unique = true)
-    private String name;
+    @Column(name = "resource_id")
+    private String resourceId;
 
-    @Column(name = "description")
-    private String description;
+    @Column(name = "scope")
+    private String scope;
 
     @CreatedBy
     @Column(name = "created_by", updatable = false)
