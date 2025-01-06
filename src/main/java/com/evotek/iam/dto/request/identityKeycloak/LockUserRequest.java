@@ -7,7 +7,6 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class LockUserRequest {
-    boolean enabled;
+    private boolean enabled;
 }

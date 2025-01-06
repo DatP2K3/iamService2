@@ -2,7 +2,7 @@ package com.evotek.iam.service.self_idp;
 
 import com.evotek.iam.configuration.TokenProvider;
 import com.evotek.iam.dto.request.LoginRequest;
-import com.evotek.iam.dto.request.VerifyOtpRequestDTO;
+import com.evotek.iam.dto.request.VerifyOtpRequest;
 import com.evotek.iam.dto.request.identityKeycloak.ResetPasswordRequest;
 import com.evotek.iam.dto.request.identityKeycloak.TokenRequest;
 import com.evotek.iam.dto.response.TokenResponse;
@@ -15,7 +15,7 @@ import com.evotek.iam.model.UserActivityLog;
 import com.evotek.iam.repository.IdentityClient;
 import com.evotek.iam.repository.UserActivityLogRepository;
 import com.evotek.iam.repository.UserRepository;
-import com.evotek.iam.service.common.AuthService2;
+import com.evotek.iam.service.common.AuthService;
 import com.evotek.iam.service.common.EmailService;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSASSASigner;
@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 @Component("self_idp_auth_service")
 @RequiredArgsConstructor
 @Slf4j
-public class SelfIDPAuthService implements AuthService2 {
+public class SelfIDPAuthService implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -92,18 +92,18 @@ public class SelfIDPAuthService implements AuthService2 {
         return null;
     }
 
-    public TokenResponse verifyOtp(VerifyOtpRequestDTO verifyOtpRequestDTO) {
-        if (!redisTemplate.hasKey(verifyOtpRequestDTO.getOtp())) {
+    public TokenResponse verifyOtp(VerifyOtpRequest verifyOtpRequest) {
+        if (!redisTemplate.hasKey(verifyOtpRequest.getOtp())) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
-        if(!redisTemplate.opsForValue().get(verifyOtpRequestDTO.getOtp()).equals(verifyOtpRequestDTO.getUsername())){
+        if(!redisTemplate.opsForValue().get(verifyOtpRequest.getOtp()).equals(verifyOtpRequest.getUsername())){
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
         User user = userRepository
-                .findByUsername((verifyOtpRequestDTO.getUsername())).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .findByUsername((verifyOtpRequest.getUsername())).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        redisTemplate.delete(verifyOtpRequestDTO.getOtp());
+        redisTemplate.delete(verifyOtpRequest.getOtp());
 
         var accessToken = generateToken(user, false, false);
         var refreshToken = generateToken(user, false, true);

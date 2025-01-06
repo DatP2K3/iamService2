@@ -3,6 +3,9 @@ package com.evotek.iam.model;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
@@ -11,20 +14,19 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "user_activity_logs")
 public class UserActivityLog {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "id")
-    int id;
+    private int id;
 
     @Column(name = "user_id")
-    int userId;
+    private int userId;
 
     @Column(name = "activity")
-    String activity;
+    private String activity;
 
     @Column(name = "created_at")
-    LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 }

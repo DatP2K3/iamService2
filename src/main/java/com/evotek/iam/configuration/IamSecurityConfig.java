@@ -1,12 +1,12 @@
 package com.evotek.iam.configuration;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,24 +25,24 @@ import java.util.Optional;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class IamSecurityConfig {
-    private JwtDecoder jwtDecoder;
+    private final JwtDecoder jwtDecoder;
+    private final CustomPermissionEvaluator customPermissionEvaluator;
 
+    @Value("${auth.keycloak-enabled}") boolean keycloakEnabled;
     @Autowired
     public IamSecurityConfig(
             @Value("${auth.keycloak-enabled}") boolean keycloakEnabled,
             @Qualifier("keycloakDecoder") Optional<JwtDecoder> keycloakDecoder,
-            @Qualifier("selfIdpDecoder") Optional<JwtDecoder> selfIdpDecoder
+            @Qualifier("selfIdpDecoder") Optional<JwtDecoder> selfIdpDecoder,
+            CustomPermissionEvaluator customPermissionEvaluator
     ) {
         this.jwtDecoder = keycloakEnabled ?
                 keycloakDecoder.orElseThrow(() -> new IllegalStateException("Keycloak decoder not found")) :
                 selfIdpDecoder.orElseThrow(() -> new IllegalStateException("Self IDP decoder not found"));
+        this.customPermissionEvaluator = customPermissionEvaluator;
     }
 
-    private final String[] PUBLIC_ENDPOINTS = {"/register", "/profiles", "/refresh"};
-    @Value("${auth.keycloak-enabled}")
-    private boolean keycloakEnabled;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
@@ -59,8 +59,6 @@ public class IamSecurityConfig {
         httpSecurity
                 .authorizeHttpRequests(request ->
                         request
-                                //.requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                                //.anyRequest().authenticated()
                                 .anyRequest().permitAll()
                 )
                 .httpBasic(Customizer.withDefaults())
@@ -73,12 +71,12 @@ public class IamSecurityConfig {
     // Cấu hình khi Keycloak bị tắt, sử dụng JWT
     private void configureJwt(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-                .authorizeHttpRequests(request -> request
-                        //.requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN") // Quyền ADMIN cho endpoint xóa người dùng
-                        .anyRequest().permitAll() // Các endpoint khác được phép truy cập công khai
+                .authorizeHttpRequests(request ->
+                        request
+                                .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
-                        .decoder(jwtDecoder) // Sử dụng CustomJwtDecoder khi JWT độc lập
+                        .decoder(jwtDecoder)
                         .jwtAuthenticationConverter(jwtAuthenticationConverter())
                 ))
                 .exceptionHandling(exceptionHandlingConfigurer ->
@@ -109,5 +107,13 @@ public class IamSecurityConfig {
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
 
         return jwtAuthenticationConverter;
+    }
+
+
+    @Bean
+     MethodSecurityExpressionHandler createExpressionHandler() {
+        DefaultMethodSecurityExpressionHandler expressionHandler = new DefaultMethodSecurityExpressionHandler();
+        expressionHandler.setPermissionEvaluator(customPermissionEvaluator);
+        return expressionHandler;
     }
 }

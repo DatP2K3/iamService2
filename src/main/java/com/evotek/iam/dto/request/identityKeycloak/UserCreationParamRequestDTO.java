@@ -9,13 +9,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserCreationParamRequestDTO {
-    String username;
-    boolean enabled;
-    String email;
-    boolean emailVerified;
-    String firstName;
-    String lastName;
-    List<CredentialRequestDTO> credentials;
+    private String username;
+    private boolean enabled;
+    private String email;
+    private boolean emailVerified;
+    private String firstName;
+    private String lastName;
+    private List<CredentialRequestDTO> credentials;
 }
