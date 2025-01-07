@@ -1,10 +1,7 @@
 package com.evotek.iam.service.common;
 
 import com.evotek.iam.dto.request.*;
-import com.evotek.iam.dto.request.identityKeycloak.CredentialRequestDTO;
-import com.evotek.iam.dto.request.identityKeycloak.LockUserRequest;
-import com.evotek.iam.dto.request.identityKeycloak.TokenRequest;
-import com.evotek.iam.dto.request.identityKeycloak.UserCreationParamRequestDTO;
+import com.evotek.iam.dto.request.identityKeycloak.*;
 import com.evotek.iam.dto.response.PageResponse;
 import com.evotek.iam.dto.response.UserResponse;
 import com.evotek.iam.exception.AppException;
@@ -37,6 +34,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final IdentityClient identityClient;
     private final ErrorNormalizer errorNormalizer;
+    private final EmailService emailService;
 
     @Value("${idp.client-id}")
     private String clientId;
@@ -142,15 +140,39 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Override
+    public void changePassword(String username, PasswordRequest passwordRequest) {
+        try {
+            User user = userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+            String userId = user.getKeyCloakUserID();
+
+            var token = identityClient.getToken(TokenRequest.builder()
+                    .grant_type("client_credentials")
+                    .client_id(clientId)
+                    .client_secret(clientSecret)
+                    .scope("openid")
+                    .build());
+            if(passwordEncoder.matches(passwordRequest.getOldPassword(), user.getPassword())) {
+                user.setPassword(passwordEncoder.encode(passwordRequest.getNewPassword()));
+                userRepository.save(user);
+
+                ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().value(passwordRequest.getNewPassword()).build();
+                identityClient.resetPassword("Bearer " + token.getAccessToken(), userId, resetPasswordRequest);
+
+                emailService.sendMailAlert(user.getEmail(), "change_password");
+            } else {
+                throw new AppException(ErrorCode.INVALID_PASSWORD);
+            }
+        } catch (FeignException e) {
+            throw errorNormalizer.handleKeyCloakException(e);
+        }
+    }
+
     private String extractUserId(ResponseEntity<?> response) {
         String location = response.getHeaders().get("Location").getFirst();
         String[] splitedStr = location.split("/");
         return splitedStr[splitedStr.length - 1];
-    }
-
-    @Override
-    public void updatePassword(int id, PasswordRequest passwordRequest) {
-
     }
 
     @Override
@@ -193,8 +215,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void lockUser(String user_id, boolean enabled) {
-        User user = userRepository.findBySelfUserID(Integer.parseInt(user_id)).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+    public void lockUser(String username, boolean enabled) {
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         user.setLocked(!enabled);
         userRepository.save(user);
 
