@@ -7,11 +7,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 
 @Service
-public interface AuthService2 {
-    public boolean introspect(String token);
-    public TokenResponse authenticate(LoginRequest loginRequest);
-    public void logoutIam(HttpServletRequest request, String refreshToken);
-    public TokenResponse refresh(String refreshToken);
+public interface AuthService {
+    boolean introspect(String token);
+    TokenResponse authenticate(LoginRequest loginRequest);
+    void logoutIam(HttpServletRequest request, String refreshToken);
+    TokenResponse refresh(String refreshToken);
     void requestPasswordReset(String username, ResetPasswordRequest resetPasswordRequest);
     void resetPassword(String token, ResetPasswordRequest resetPasswordRequest);
 }

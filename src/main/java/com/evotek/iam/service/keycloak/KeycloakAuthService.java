@@ -1,6 +1,5 @@
 package com.evotek.iam.service.keycloak;
 
-import com.evotek.iam.dto.request.GetUserRequest;
 import com.evotek.iam.dto.request.LoginRequest;
 import com.evotek.iam.dto.request.identityKeycloak.LogoutRequest;
 import com.evotek.iam.dto.request.identityKeycloak.RefreshTokenRequest;
@@ -13,7 +12,7 @@ import com.evotek.iam.exception.ErrorNormalizer;
 import com.evotek.iam.model.User;
 import com.evotek.iam.repository.IdentityClient;
 import com.evotek.iam.repository.UserRepository;
-import com.evotek.iam.service.common.AuthService2;
+import com.evotek.iam.service.common.AuthService;
 import com.evotek.iam.service.common.EmailService;
 import com.nimbusds.jwt.SignedJWT;
 import feign.FeignException;
@@ -28,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 @Component("keycloak_auth_service")
 @RequiredArgsConstructor
-public class KeycloakAuthService implements AuthService2 {
+public class KeycloakAuthService implements AuthService {
     private final IdentityClient identityClient;
     private final ErrorNormalizer errorNormalizer;
     private final RedisTemplate redisTemplate;
@@ -53,7 +52,7 @@ public class KeycloakAuthService implements AuthService2 {
     @Override
     public TokenResponse authenticate(LoginRequest loginRequest) {
         try {
-            TokenResponse tokenResponse = identityClient.getToken(TokenRequest.builder()
+            return identityClient.getToken(TokenRequest.builder()
                     .grant_type("password")
                     .client_id(clientId)
                     .client_secret(clientSecret)
@@ -61,7 +60,6 @@ public class KeycloakAuthService implements AuthService2 {
                     .username(loginRequest.getUsername())
                     .password(loginRequest.getPassword())
                     .build());
-            return tokenResponse;
         } catch (FeignException exception) {
             throw errorNormalizer.handleKeyCloakException(exception);
         }
@@ -129,7 +127,6 @@ public class KeycloakAuthService implements AuthService2 {
 
     @Override
     public void resetPassword(String token, ResetPasswordRequest resetPasswordRequest) {
-
     }
 
     private boolean verifyToken(String token){

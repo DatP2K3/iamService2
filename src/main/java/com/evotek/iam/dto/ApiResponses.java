@@ -9,7 +9,7 @@ import java.io.Serializable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Builder
 @Data
-public class ApiResponse<T> implements Serializable {
+public class ApiResponses<T> implements Serializable {
     protected T data;
     private boolean success;
     private int code;

@@ -1,6 +1,6 @@
 package com.evotek.iam.configuration;
 
-import com.evotek.iam.dto.ApiResponse;
+import com.evotek.iam.dto.ApiResponses;
 import com.evotek.iam.exception.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +23,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setStatus(errorCode.getStatusCode().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        ApiResponse<?> apiResponse = ApiResponse.builder()
+        ApiResponses<?> apiResponses = ApiResponses.builder()
                 .code(errorCode.getCode())
                 .message(errorCode.getMessage())
                 .success(false)
@@ -31,7 +31,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
                 .status("error")
                 .build();
 
-        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        response.getWriter().write(objectMapper.writeValueAsString(apiResponses));
         response.flushBuffer();
     }
 }
