@@ -1,6 +1,7 @@
 package com.evotek.iam.service.common;
 
 import com.evotek.iam.dto.request.PermissionRequest;
+import com.evotek.iam.dto.response.PageResponse;
 import com.evotek.iam.model.Permission;
 import com.evotek.iam.model.RolePermission;
 import com.evotek.iam.repository.PermissionsRepository;
@@ -34,7 +35,8 @@ public class PermissionService {
         return permission;
     }
 
-    public List<Permission> getPermissions() {
-        return permissionsRepository.findAll();
+    public PageResponse<Permission> search(String keyword, int pageIndex, int pageSize, String sortBy) {
+        List<Permission> permissions = permissionsRepository.search(keyword, pageIndex, pageSize, sortBy);
+        return PageResponse.<Permission>builder().userResponses(permissions).pageIndex(pageIndex).pageSize(pageSize).build();
     }
 }

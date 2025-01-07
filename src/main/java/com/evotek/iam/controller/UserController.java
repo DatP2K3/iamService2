@@ -127,7 +127,7 @@ public class UserController {
             })
     @PreAuthorize("hasPermission('user', 'manage')")
     @GetMapping("/users/search")
-    public ApiResponses<PageResponse> search(@Parameter(description = "Từ khóa cần tìm kiếm", example = "John Doe")
+    public ApiResponses<PageResponse<UserResponse>> search(@Parameter(description = "Từ khóa cần tìm kiếm", example = "John Doe")
                                                  @RequestParam String keyword,
 
                                              @Parameter(description = "Chỉ số trang bắt đầu từ 0", example = "0")
@@ -138,8 +138,8 @@ public class UserController {
 
                                              @Parameter(description = "Cột dùng để sắp xếp", example = "username")
                                                  @RequestParam String sortBy) {
-        PageResponse pageResponse = userService.search(keyword, pageIndex, pageSize, sortBy);
-        return ApiResponses.<PageResponse>builder()
+        PageResponse<UserResponse> pageResponse = userService.search(keyword, pageIndex, pageSize, sortBy);
+        return ApiResponses.<PageResponse<UserResponse>>builder()
                 .data(pageResponse)
                 .success(true)
                 .code(200)

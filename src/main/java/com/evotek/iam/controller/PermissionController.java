@@ -2,16 +2,17 @@ package com.evotek.iam.controller;
 
 import com.evotek.iam.dto.ApiResponses;
 import com.evotek.iam.dto.request.PermissionRequest;
+import com.evotek.iam.dto.response.PageResponse;
 import com.evotek.iam.model.Permission;
 import com.evotek.iam.service.common.PermissionService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -50,10 +51,20 @@ public class PermissionController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Danh sách quyền đã được trả về")
             })
-    @GetMapping("/permissions")
-    public ApiResponses<List<Permission>> getPermissions() {
-        return ApiResponses.<List<Permission>>builder()
-                .data(permissionService.getPermissions())
+    @GetMapping("/permissions/search")
+    public ApiResponses<PageResponse<Permission>> search(@Parameter(description = "Từ khóa cần tìm kiếm", example = "John Doe")
+                                                             @RequestParam String keyword,
+
+                                                                 @Parameter(description = "Chỉ số trang bắt đầu từ 0", example = "0")
+                                                             @RequestParam int pageIndex,
+
+                                                                 @Parameter(description = "Kích thước mỗi trang", example = "10")
+                                                             @RequestParam int pageSize,
+
+                                                                 @Parameter(description = "Cột dùng để sắp xếp", example = "username")
+                                                             @RequestParam String sortBy) {
+        return ApiResponses.<PageResponse<Permission>>builder()
+                .data(permissionService.search(keyword, pageIndex, pageSize, sortBy))
                 .success(true)
                 .code(200)
                 .message("Get permissions successfully")
