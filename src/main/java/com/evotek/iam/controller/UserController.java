@@ -1,8 +1,10 @@
 package com.evotek.iam.controller;
 
 import com.evotek.iam.dto.ApiResponses;
+import com.evotek.iam.dto.request.PasswordRequest;
 import com.evotek.iam.dto.request.UpdateUserRequest;
 import com.evotek.iam.dto.request.UserRequest;
+import com.evotek.iam.dto.request.identityKeycloak.ResetPasswordRequest;
 import com.evotek.iam.dto.response.PageResponse;
 import com.evotek.iam.dto.response.UserResponse;
 import com.evotek.iam.service.common.UserServiceImpl;
@@ -108,7 +110,8 @@ public class UserController {
     @PreAuthorize("hasPermission('user', 'update')")
     @PutMapping("/users")
     public ApiResponses<UserResponse> updateUser(@Parameter(description = "username of user account", required = true)
-                                                     @RequestParam String username, @RequestBody UpdateUserRequest updateUserRequest) {
+                                                     @RequestParam String username,
+                                                 @RequestBody UpdateUserRequest updateUserRequest) {
         UserResponse userResponse = userService.updateUser(username, updateUserRequest);
         return ApiResponses.<UserResponse>builder()
                 .data(userResponse)
@@ -177,16 +180,43 @@ public class UserController {
                     @ApiResponse(responseCode = "200", description = "Khóa/Mở khóa người dùng thành công")
             })
     @PreAuthorize("hasPermission('user', 'delete')")
-    @PatchMapping("/users/{selfUserID}")
+    @PatchMapping("/users/lock")
     public ApiResponses<Void> lockUser(@Parameter(description = "ID của người dùng cần cập nhật trạng thái", example = "12345")
-                                           @PathVariable String selfUserID,
+                                           @RequestParam String username,
                                        @Parameter(description = "Trạng thái của người dùng: `true` để khoá, `false` để mở khoá", example = "true")
                                            @RequestParam boolean enabled) {
-        userService.lockUser(selfUserID, enabled);
+        userService.lockUser(username, enabled);
         return ApiResponses.<Void>builder()
                 .success(true)
                 .code(200)
                 .message("Lock/Unlock user successfully")
+                .timestamp(System.currentTimeMillis())
+                .status("OK")
+                .build();
+    }
+
+    @Operation(summary = "Đổi mật khẩu",
+            description = "API này sẽ đổi mật khẩu của người dùng.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Thông tin mật khẩu",
+                    required = true,
+                    content = @io.swagger.v3.oas.annotations.media.Content(
+                            schema = @Schema(implementation = PasswordRequest.class)
+                    )
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Mật khẩu đã được đổi")
+            })
+    @PreAuthorize("hasPermission('user', 'update')")
+    @PatchMapping("/users/change-password")
+    public ApiResponses<Void> changePassword(@Parameter(description = "username of user account", required = true)
+                                                 @RequestParam String username,
+                                             @RequestBody PasswordRequest passwordRequest) {
+        userService.changePassword(username,passwordRequest);
+        return ApiResponses.<Void>builder()
+                .success(true)
+                .code(200)
+                .message("Password successfully changed")
                 .timestamp(System.currentTimeMillis())
                 .status("OK")
                 .build();
