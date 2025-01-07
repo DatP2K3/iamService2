@@ -43,6 +43,9 @@ public class User {
     @Column(name="deleted", nullable = false)
     private boolean deleted = false;
 
+    @Column(name = "root")
+    private boolean root = false;
+
     @CreatedBy
     @Column(name = "created_by", updatable = false)
     private String createdBy;
