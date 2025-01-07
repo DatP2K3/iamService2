@@ -52,6 +52,7 @@ public class PermissionController {
                     @ApiResponse(responseCode = "200", description = "Danh sách quyền đã được trả về")
             })
     @GetMapping("/permissions/search")
+    @PreAuthorize("hasPermission('permission', 'read')")
     public ApiResponses<PageResponse<Permission>> search(@Parameter(description = "Từ khóa cần tìm kiếm", example = "John Doe")
                                                              @RequestParam String keyword,
 

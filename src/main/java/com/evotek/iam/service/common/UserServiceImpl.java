@@ -126,8 +126,12 @@ public class UserServiceImpl implements UserService {
             user.setPassword(password);
 
             Role role = roleRepository.findByName(userRequest.getRole()).orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
-            user = userRepository.save(user);
 
+            if(role.getName().equals("ROLE_ADMIN")) {
+                user.setRoot(true);
+            }
+
+            user = userRepository.save(user);
             UserRole userRole = UserRole.builder()
                     .userId(user.getSelfUserID())
                     .roleId(role.getId())
