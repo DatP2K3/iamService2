@@ -209,10 +209,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public PageResponse search(String keyword, int pageIndex, int pageSize, String sortBy) {
+    public PageResponse<UserResponse> search(String keyword, int pageIndex, int pageSize, String sortBy) {
         List<User> users = userRepository.search(keyword, pageIndex, pageSize, sortBy);
-        List<UserResponse> userResponseS = users.stream().map(userMapper::userToUserResponse).toList();
-        return PageResponse.builder().userResponses(userResponseS).pageIndex(pageIndex).pageSize(pageSize).build();
+        List<UserResponse> userResponses = users.stream().map(userMapper::userToUserResponse).toList();
+        return PageResponse.<UserResponse>builder().userResponses(userResponses).pageIndex(pageIndex).pageSize(pageSize).build();
     }
 
 }
