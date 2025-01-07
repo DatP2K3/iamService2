@@ -1,7 +1,10 @@
 package com.evotek.iam.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -12,18 +15,18 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "roles")
-public class Role {
+@Table(name = "user_roles")
+public class UserRole {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private int id;
 
-    @Column(name = "name", nullable = false, unique = true)
-    private String name;
+    @Column(name = "user_id")
+    private int userId;
 
-    @Column(name = "description")
-    private String description;
+    @Column(name = "role_id")
+    private int roleId;
 
     @CreatedBy
     @Column(name = "created_by", updatable = false)

@@ -16,8 +16,9 @@ public enum ErrorCode {
     USER_EXISTED(1009, "Username existed, please choose another one", HttpStatus.BAD_REQUEST),
     USERNAME_IS_MISSING(1010, "Please enter username", HttpStatus.BAD_REQUEST),
     USER_NOT_EXISTED(1011, "User not existed", HttpStatus.BAD_REQUEST),
-    INVALID_TOKEN(1012, "Invalid token", HttpStatus.BAD_REQUEST),
-    LOGOUT_FAILED(1012, "Logout failed", HttpStatus.BAD_REQUEST),
+    ROLE_NOT_EXISTED(1012, "User not existed", HttpStatus.BAD_REQUEST),
+    INVALID_TOKEN(1013, "Invalid token", HttpStatus.BAD_REQUEST),
+    LOGOUT_FAILED(1014, "Logout failed", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

@@ -1,15 +1,14 @@
 package com.evotek.iam.mapper;
 
-import com.evotek.iam.dto.request.UserRequestDTO;
-import com.evotek.iam.dto.response.UserResponseDTO;
+import com.evotek.iam.dto.request.UserRequest;
+import com.evotek.iam.dto.response.UserResponse;
 import com.evotek.iam.model.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
-//    @Mapping(source = "role.id", target = "roleId")
-    UserResponseDTO userToUserResponseDTO(User user);
+    UserResponse userToUserResponse(User user);
     @Mapping(target = "locked", constant = "false")
-    User UserRequestDTOToUser(UserRequestDTO userRequestDTO);
+    User UserRequestToUser(UserRequest userRequest);
 }

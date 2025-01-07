@@ -1,5 +1,6 @@
 package com.evotek.iam.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -17,6 +19,7 @@ public class GlobalExceptionHandler {
         response.put("message", ex.getMessage());
         response.put("status", HttpStatus.NOT_FOUND.value());
         response.put("timestamp", System.currentTimeMillis());
+        log.error("Resource not found: {}", ex.getMessage(), ex);
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
@@ -27,6 +30,7 @@ public class GlobalExceptionHandler {
         response.put("message", ex.getMessage());
         response.put("status", HttpStatus.CONFLICT.value());
         response.put("timestamp", System.currentTimeMillis());
+        log.error("User already exists: {}", ex.getMessage(), ex);
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
@@ -37,6 +41,7 @@ public class GlobalExceptionHandler {
         response.put("message", ex.getMessage());
         response.put("status", HttpStatus.UNAUTHORIZED.value());
         response.put("timestamp", System.currentTimeMillis());
+        log.error("App exception: {}", ex.getMessage(), ex);
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
@@ -47,6 +52,7 @@ public class GlobalExceptionHandler {
         response.put("message", ex.getMessage());
         response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         response.put("timestamp", System.currentTimeMillis());
+        log.error("Internal server error: {}", ex.getMessage(), ex);
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

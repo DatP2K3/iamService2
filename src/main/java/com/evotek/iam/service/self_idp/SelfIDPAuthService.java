@@ -2,7 +2,7 @@ package com.evotek.iam.service.self_idp;
 
 import com.evotek.iam.configuration.TokenProvider;
 import com.evotek.iam.dto.request.LoginRequest;
-import com.evotek.iam.dto.request.VerifyOtpRequestDTO;
+import com.evotek.iam.dto.request.VerifyOtpRequest;
 import com.evotek.iam.dto.request.identityKeycloak.ResetPasswordRequest;
 import com.evotek.iam.dto.request.identityKeycloak.TokenRequest;
 import com.evotek.iam.dto.response.TokenResponse;
@@ -13,9 +13,8 @@ import com.evotek.iam.exception.ResourceNotFoundException;
 import com.evotek.iam.model.User;
 import com.evotek.iam.model.UserActivityLog;
 import com.evotek.iam.repository.IdentityClient;
-import com.evotek.iam.repository.UserActivityLogRepository;
 import com.evotek.iam.repository.UserRepository;
-import com.evotek.iam.service.common.AuthService2;
+import com.evotek.iam.service.common.AuthService;
 import com.evotek.iam.service.common.EmailService;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSASSASigner;
@@ -44,13 +43,12 @@ import java.util.concurrent.TimeUnit;
 @Component("self_idp_auth_service")
 @RequiredArgsConstructor
 @Slf4j
-public class SelfIDPAuthService implements AuthService2 {
+public class SelfIDPAuthService implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final ErrorNormalizer errorNormalizer;
     private final RedisTemplate redisTemplate;
-    private final UserActivityLogRepository userActivityLogRepository;
     private final TokenProvider tokenProvider;
     private final IdentityClient identityClient;
 
@@ -92,23 +90,22 @@ public class SelfIDPAuthService implements AuthService2 {
         return null;
     }
 
-    public TokenResponse verifyOtp(VerifyOtpRequestDTO verifyOtpRequestDTO) {
-        if (!redisTemplate.hasKey(verifyOtpRequestDTO.getOtp())) {
+    public TokenResponse verifyOtp(VerifyOtpRequest verifyOtpRequest) {
+        if (!redisTemplate.hasKey(verifyOtpRequest.getOtp())) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
-        if(!redisTemplate.opsForValue().get(verifyOtpRequestDTO.getOtp()).equals(verifyOtpRequestDTO.getUsername())){
+        if(!redisTemplate.opsForValue().get(verifyOtpRequest.getOtp()).equals(verifyOtpRequest.getUsername())){
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
         User user = userRepository
-                .findByUsername((verifyOtpRequestDTO.getUsername())).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .findByUsername((verifyOtpRequest.getUsername())).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        redisTemplate.delete(verifyOtpRequestDTO.getOtp());
+        redisTemplate.delete(verifyOtpRequest.getOtp());
 
         var accessToken = generateToken(user, false, false);
         var refreshToken = generateToken(user, false, true);
         UserActivityLog log = new UserActivityLog();
-        userActivityLogRepository.save(log);
 
         return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
     }
@@ -175,7 +172,6 @@ public class SelfIDPAuthService implements AuthService2 {
             log.setUserId(signedJWT_access.getJWTClaimsSet().getIntegerClaim("userId"));
             log.setActivity("Logout");
             log.setCreatedAt(LocalDateTime.now());
-            userActivityLogRepository.save(log);
         } catch (FeignException exception) {
             throw errorNormalizer.handleKeyCloakException(exception);
         } catch (ParseException e) {
@@ -263,7 +259,6 @@ public class SelfIDPAuthService implements AuthService2 {
             log.setUserId(signedJWT.getJWTClaimsSet().getIntegerClaim("userId"));
             log.setActivity("Reset password");
             log.setCreatedAt(LocalDateTime.now());
-            userActivityLogRepository.save(log);
 
         } catch (AppException ex) {
             throw new AppException(ErrorCode.INVALID_KEY);
