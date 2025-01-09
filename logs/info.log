@@ -2273,3 +2273,59 @@
 15:58:10.053 INFO  o.s.w.s.DispatcherServlet - Completed initialization in 1 ms
 15:58:10.066 INFO  c.e.i.c.LoggingInterceptor - Request: POST /api/users
 15:58:10.387 INFO  c.e.i.c.LoggingInterceptor - Response: 200 application/json
+17:44:03.579 INFO  c.e.i.IamApplication - Starting IamApplication using Java 21.0.5 with PID 13536 (/Users/macbookairm3/Downloads/iam/target/classes started by macbookairm3 in /Users/macbookairm3/Downloads/iam)
+17:44:03.583 INFO  c.e.i.IamApplication - No active profile set, falling back to 1 default profile: "default"
+17:44:04.411 INFO  o.s.b.f.s.DefaultListableBeanFactory - Overriding bean definition for bean 'jpaAuditingHandler' with a different definition: replacing [Root bean: class=org.springframework.data.auditing.AuditingHandler; scope=; abstract=false; lazyInit=null; autowireMode=0; dependencyCheck=0; autowireCandidate=true; primary=false; fallback=false; factoryBeanName=null; factoryMethodName=from; initMethodNames=null; destroyMethodNames=null] with [Root bean: class=org.springframework.data.auditing.AuditingHandler; scope=; abstract=false; lazyInit=null; autowireMode=2; dependencyCheck=0; autowireCandidate=true; primary=false; fallback=false; factoryBeanName=null; factoryMethodName=from; initMethodNames=null; destroyMethodNames=null]
+17:44:04.412 INFO  o.s.b.f.s.DefaultListableBeanFactory - Overriding bean definition for bean 'org.springframework.data.jpa.domain.support.AuditingEntityListener' with an equivalent definition: replacing [Root bean: class=org.springframework.data.jpa.domain.support.AuditingEntityListener; scope=; abstract=false; lazyInit=null; autowireMode=0; dependencyCheck=0; autowireCandidate=true; primary=false; fallback=false; factoryBeanName=null; factoryMethodName=null; initMethodNames=null; destroyMethodNames=null] with [Root bean: class=org.springframework.data.jpa.domain.support.AuditingEntityListener; scope=; abstract=false; lazyInit=null; autowireMode=0; dependencyCheck=0; autowireCandidate=true; primary=false; fallback=false; factoryBeanName=null; factoryMethodName=null; initMethodNames=null; destroyMethodNames=null]
+17:44:04.412 INFO  o.s.b.f.s.DefaultListableBeanFactory - Overriding bean definition for bean 'org.springframework.data.jpa.domain.support.AuditingBeanFactoryPostProcessor' with an equivalent definition: replacing [Root bean: class=org.springframework.data.jpa.domain.support.AuditingBeanFactoryPostProcessor; scope=; abstract=false; lazyInit=null; autowireMode=0; dependencyCheck=0; autowireCandidate=true; primary=false; fallback=false; factoryBeanName=null; factoryMethodName=null; initMethodNames=null; destroyMethodNames=null] with [Root bean: class=org.springframework.data.jpa.domain.support.AuditingBeanFactoryPostProcessor; scope=; abstract=false; lazyInit=null; autowireMode=0; dependencyCheck=0; autowireCandidate=true; primary=false; fallback=false; factoryBeanName=null; factoryMethodName=null; initMethodNames=null; destroyMethodNames=null]
+17:44:04.682 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+17:44:04.685 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+17:44:04.902 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 201 ms. Found 5 JPA repository interfaces.
+17:44:04.918 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+17:44:04.919 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+17:44:04.938 INFO  o.s.d.r.c.RepositoryConfigurationExtensionSupport - Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.evotek.iam.repository.PermissionsRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+17:44:04.938 INFO  o.s.d.r.c.RepositoryConfigurationExtensionSupport - Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.evotek.iam.repository.RolePermissionRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+17:44:04.938 INFO  o.s.d.r.c.RepositoryConfigurationExtensionSupport - Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.evotek.iam.repository.RoleRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+17:44:04.938 INFO  o.s.d.r.c.RepositoryConfigurationExtensionSupport - Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.evotek.iam.repository.UserRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+17:44:04.938 INFO  o.s.d.r.c.RepositoryConfigurationExtensionSupport - Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.evotek.iam.repository.UserRoleRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+17:44:04.938 INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 7 ms. Found 0 Redis repository interfaces.
+17:44:05.181 INFO  o.s.c.c.s.GenericScope - BeanFactory id=118ffa1d-79ae-3180-8b75-778e9ad96d85
+17:44:05.595 INFO  o.s.b.w.e.t.TomcatWebServer - Tomcat initialized with port 8888 (http)
+17:44:05.605 INFO  o.a.c.h.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8888"]
+17:44:05.606 INFO  o.a.c.c.StandardService - Starting service [Tomcat]
+17:44:05.606 INFO  o.a.c.c.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.33]
+17:44:05.651 INFO  o.a.c.c.C.[.[.[/] - Initializing Spring embedded WebApplicationContext
+17:44:05.652 INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 2003 ms
+17:44:05.816 INFO  o.h.Version - HHH000412: Hibernate ORM core version 6.6.2.Final
+17:44:05.838 INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+17:44:06.015 INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+17:44:06.038 INFO  c.z.h.HikariDataSource - HikariPool-1 - Starting...
+17:44:06.135 INFO  c.z.h.p.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@391e85df
+17:44:06.135 INFO  c.z.h.HikariDataSource - HikariPool-1 - Start completed.
+17:44:06.169 INFO  o.h.o.c.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 17.2
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+17:44:06.798 INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+17:44:06.832 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+17:44:07.017 INFO  o.s.d.j.r.q.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+17:44:09.834 INFO  o.a.c.h.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8888"]
+17:44:09.846 INFO  o.s.b.w.e.t.TomcatWebServer - Tomcat started on port 8888 (http) with context path '/'
+17:44:09.870 INFO  c.e.i.IamApplication - Started IamApplication in 7.203 seconds (process running for 9.169)
+17:44:46.119 INFO  o.a.c.c.C.[.[.[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+17:44:46.119 INFO  o.s.w.s.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+17:44:46.126 INFO  o.s.w.s.DispatcherServlet - Completed initialization in 6 ms
+17:46:48.524 INFO  c.e.i.c.LoggingInterceptor - Request: GET /error
+17:46:48.548 INFO  c.e.i.c.LoggingInterceptor - Response: 401 null
+17:46:48.646 INFO  c.e.i.c.LoggingInterceptor - Request: GET /favicon.ico
+17:46:56.484 INFO  c.e.i.c.LoggingInterceptor - Request: GET /
+17:47:32.734 INFO  c.e.i.c.LoggingInterceptor - Request: GET /favicon.ico
+17:51:48.148 INFO  o.s.b.w.e.t.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+17:51:48.155 INFO  o.s.b.w.e.t.GracefulShutdown - Graceful shutdown complete
+17:51:48.322 INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+17:51:48.330 INFO  c.z.h.HikariDataSource - HikariPool-1 - Shutdown initiated...
+17:51:48.345 INFO  c.z.h.HikariDataSource - HikariPool-1 - Shutdown completed.
