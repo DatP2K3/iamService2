@@ -253,7 +253,7 @@ public class SelfIDPAuthService implements AuthService {
                     .scope("openid")
                     .build());
 
-            identityClient.resetPassword("Bearer " + keycloakToken.getAccessToken(), user.getKeyCloakUserID(), resetPasswordRequest);
+            identityClient.resetPassword("Bearer " + keycloakToken.getAccessToken(), user.getProviderId(), resetPasswordRequest);
 
             UserActivityLog log = new UserActivityLog();
             log.setUserId(signedJWT.getJWTClaimsSet().getIntegerClaim("userId"));

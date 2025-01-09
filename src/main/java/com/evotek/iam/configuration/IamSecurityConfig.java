@@ -1,5 +1,7 @@
 package com.evotek.iam.configuration;
 
+import com.evotek.iam.repository.UserRepository;
+import com.evotek.iam.service.common.CustomOAuth2UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +30,8 @@ import java.util.Optional;
 public class IamSecurityConfig {
     private final JwtDecoder jwtDecoder;
     private final CustomPermissionEvaluator customPermissionEvaluator;
+    @Autowired
+    private UserRepository userRepository;
 
     @Value("${auth.keycloak-enabled}") boolean keycloakEnabled;
     @Autowired
@@ -75,6 +79,11 @@ public class IamSecurityConfig {
                         request
                                 .anyRequest().permitAll()
                 )
+//                .oauth2Login(oauth2Login -> oauth2Login
+//                        .userInfoEndpoint(userInfoEndpoint ->
+//                                userInfoEndpoint.userService(new CustomOAuth2UserService(userRepository))  // Sử dụng CustomOAuth2UserService
+//                        )
+//                )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(jwtDecoder)
                         .jwtAuthenticationConverter(jwtAuthenticationConverter())
@@ -116,4 +125,5 @@ public class IamSecurityConfig {
         expressionHandler.setPermissionEvaluator(customPermissionEvaluator);
         return expressionHandler;
     }
+
 }

@@ -1,6 +1,6 @@
 package com.evotek.iam.configuration;
 
-import com.evotek.iam.dto.ApiResponses;
+import com.evotek.iam.dto.response.ApiResponses;
 import com.evotek.iam.exception.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;

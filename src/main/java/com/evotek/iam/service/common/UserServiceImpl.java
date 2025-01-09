@@ -2,7 +2,7 @@ package com.evotek.iam.service.common;
 
 import com.evotek.iam.dto.request.*;
 import com.evotek.iam.dto.request.identityKeycloak.*;
-import com.evotek.iam.dto.response.PageResponse;
+import com.evotek.iam.dto.response.PageApiResponse;
 import com.evotek.iam.dto.response.UserResponse;
 import com.evotek.iam.exception.AppException;
 import com.evotek.iam.exception.ErrorCode;
@@ -76,7 +76,7 @@ public class UserServiceImpl implements UserService {
 
             String userId = extractUserId(creationResponse);
             User user = userMapper.UserRequestToUser(userRequest);
-            user.setKeyCloakUserID(userId);
+            user.setProviderId(userId);
             String password = passwordEncoder.encode(user.getPassword());
             user.setPassword(password);
             user = userRepository.save(user);
@@ -121,15 +121,11 @@ public class UserServiceImpl implements UserService {
 
             String userId = extractUserId(creationResponse);
             User user = userMapper.UserRequestToUser(userRequest);
-            user.setKeyCloakUserID(userId);
+            user.setProviderId(userId);
             String password = passwordEncoder.encode(user.getPassword());
             user.setPassword(password);
 
             Role role = roleRepository.findByName(userRequest.getRole()).orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
-
-            if(role.getName().equals("ROLE_ADMIN")) {
-                user.setRoot(true);
-            }
 
             user = userRepository.save(user);
             UserRole userRole = UserRole.builder()
@@ -149,7 +145,7 @@ public class UserServiceImpl implements UserService {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-            String userId = user.getKeyCloakUserID();
+            String userId = user.getProviderId();
 
             var token = identityClient.getToken(TokenRequest.builder()
                     .grant_type("client_credentials")
@@ -183,7 +179,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse updateUser(String username, UpdateUserRequest updateUserRequest) {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-            String user_id = user.getKeyCloakUserID();
+            String user_id = user.getProviderId();
 
             var token = identityClient.getToken(TokenRequest.builder()
                     .grant_type("client_credentials")
@@ -231,14 +227,14 @@ public class UserServiceImpl implements UserService {
                 .scope("openid")
                 .build());
 
-        identityClient.lockUser("Bearer " + token.getAccessToken(), user.getKeyCloakUserID(), LockUserRequest.builder().enabled(enabled).build());
+        identityClient.lockUser("Bearer " + token.getAccessToken(), user.getProviderId(), LockUserRequest.builder().enabled(enabled).build());
     }
 
     @Override
-    public PageResponse<UserResponse> search(String keyword, int pageIndex, int pageSize, String sortBy) {
-        List<User> users = userRepository.search(keyword, pageIndex, pageSize, sortBy);
+    public List<UserResponse> search(UserSearchRequest userSearchRequest) {
+        List<User> users = userRepository.search(userSearchRequest);
         List<UserResponse> userResponses = users.stream().map(userMapper::userToUserResponse).toList();
-        return PageResponse.<UserResponse>builder().userResponses(userResponses).pageIndex(pageIndex).pageSize(pageSize).build();
+        return userResponses;
     }
 
 }

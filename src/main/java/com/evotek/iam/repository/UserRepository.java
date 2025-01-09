@@ -11,4 +11,6 @@ public interface UserRepository extends JpaRepository<User, Integer>,  UserRepos
     @Query("from User e where e.deleted = false and lower(e.username) = lower(:username)")
     Optional<User> findByUsername(@Param("username") String username);
     Optional<User> findBySelfUserID(int selfUserID);
+
+    Optional<User> findByEmail(String email);
 }

@@ -1,6 +1,6 @@
 package com.evotek.iam.controller;
 
-import com.evotek.iam.dto.ApiResponses;
+import com.evotek.iam.dto.response.ApiResponses;
 import com.evotek.iam.dto.request.RoleRequest;
 import com.evotek.iam.model.Role;
 import com.evotek.iam.service.common.RoleService;

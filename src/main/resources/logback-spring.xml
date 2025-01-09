@@ -60,10 +60,8 @@
         <encoder>
             <pattern>${LOG_PATTERN_CONSOLE}</pattern>
         </encoder>
-        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>WARN</level>
-            <onMatch>ACCEPT</onMatch>
-            <onMismatch>DENY</onMismatch>
         </filter>
     </appender>
 

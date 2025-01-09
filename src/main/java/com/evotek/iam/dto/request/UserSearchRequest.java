@@ -1,18 +1,12 @@
 package com.evotek.iam.dto.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class UserSearchRequest {
+public class UserSearchRequest extends PagingRequest {
     private String keyword;
-    private int pageIndex;
-    private int pageSize;
-    private String sortBy;
 }
 

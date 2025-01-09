@@ -1,6 +1,6 @@
 package com.evotek.iam.controller;
 
-import com.evotek.iam.dto.ApiResponses;
+import com.evotek.iam.dto.response.ApiResponses;
 import com.evotek.iam.dto.request.LoginRequest;
 import com.evotek.iam.dto.request.VerifyOtpRequest;
 import com.evotek.iam.dto.request.identityKeycloak.ResetPasswordRequest;

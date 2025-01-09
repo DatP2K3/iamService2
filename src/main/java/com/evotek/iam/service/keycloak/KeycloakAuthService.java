@@ -105,7 +105,7 @@ public class KeycloakAuthService implements AuthService {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-            String userId = user.getKeyCloakUserID();
+            String userId = user.getProviderId();
 
             var token = identityClient.getToken(TokenRequest.builder()
                     .grant_type("client_credentials")

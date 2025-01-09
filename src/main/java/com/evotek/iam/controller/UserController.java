@@ -1,10 +1,11 @@
 package com.evotek.iam.controller;
 
-import com.evotek.iam.dto.ApiResponses;
+import com.evotek.iam.dto.response.ApiResponses;
 import com.evotek.iam.dto.request.PasswordRequest;
 import com.evotek.iam.dto.request.UpdateUserRequest;
 import com.evotek.iam.dto.request.UserRequest;
-import com.evotek.iam.dto.request.identityKeycloak.ResetPasswordRequest;
+import com.evotek.iam.dto.request.UserSearchRequest;
+import com.evotek.iam.dto.response.PageApiResponse;
 import com.evotek.iam.dto.response.PageResponse;
 import com.evotek.iam.dto.response.UserResponse;
 import com.evotek.iam.service.common.UserServiceImpl;
@@ -16,6 +17,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -125,28 +128,31 @@ public class UserController {
 
     @Operation(summary = "Tìm kiếm người dùng",
             description = "API này sẽ trả về danh sách người dùng theo từ khóa tìm kiếm.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Thông tin tìm kiếm",
+                    required = true,
+                    content = @io.swagger.v3.oas.annotations.media.Content(
+                            schema = @Schema(implementation = UserSearchRequest.class)
+                    )
+            ),
             responses = {
                     @ApiResponse(responseCode = "200", description = "Danh sách người dùng")
             })
     @PreAuthorize("hasPermission('user', 'manage')")
     @GetMapping("/users/search")
-    public ApiResponses<PageResponse<UserResponse>> search(@Parameter(description = "Từ khóa cần tìm kiếm", example = "John Doe")
-                                                 @RequestParam String keyword,
+    public PageApiResponse<List<UserResponse>> search(@RequestBody UserSearchRequest userSearchRequest) {
+        List<UserResponse> listUserResponse = userService.search(userSearchRequest);
 
-                                             @Parameter(description = "Chỉ số trang bắt đầu từ 0", example = "0")
-                                                 @RequestParam int pageIndex,
+        PageApiResponse.PageableResponse pageableResponse = PageApiResponse.PageableResponse.builder()
+                                                                .pageSize(userSearchRequest.getPageSize())
+                                                                .pageIndex(userSearchRequest.getPageIndex()).build();
 
-                                             @Parameter(description = "Kích thước mỗi trang", example = "10")
-                                                 @RequestParam int pageSize,
-
-                                             @Parameter(description = "Cột dùng để sắp xếp", example = "username")
-                                                 @RequestParam String sortBy) {
-        PageResponse<UserResponse> pageResponse = userService.search(keyword, pageIndex, pageSize, sortBy);
-        return ApiResponses.<PageResponse<UserResponse>>builder()
-                .data(pageResponse)
+        return PageApiResponse.<List<UserResponse>>builder()
+                .data(listUserResponse)
                 .success(true)
                 .code(200)
-                .message("Get list user successfully")
+                .pageable(pageableResponse)
+                .message("Search user successfully")
                 .timestamp(System.currentTimeMillis())
                 .status("OK")
                 .build();

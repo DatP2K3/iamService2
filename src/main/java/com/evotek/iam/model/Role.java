@@ -32,4 +32,6 @@ public class Role {
     @LastModifiedBy
     @Column(name = "last_modified_by")
     private String lastModifiedBy;
+
+    //Thêm root
 }

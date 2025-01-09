@@ -52,10 +52,6 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
         if (user == null) {
             return false;
         }
-        if(user.isRoot()) {
-            return true;
-        }
-
         UserRole userRole = userRoleRepository.findByUserId(user.getSelfUserID()).orElseThrow(() -> new RuntimeException("User role not found"));
 
         List<RolePermission> rolePermissions = rolePermissionRepository.findByRoleId(userRole.getRoleId());
