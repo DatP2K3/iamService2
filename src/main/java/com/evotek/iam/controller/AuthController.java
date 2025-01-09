@@ -1,6 +1,6 @@
 package com.evotek.iam.controller;
 
-import com.evotek.iam.dto.ApiResponses;
+import com.evotek.iam.dto.response.ApiResponses;
 import com.evotek.iam.dto.request.LoginRequest;
 import com.evotek.iam.dto.request.VerifyOtpRequest;
 import com.evotek.iam.dto.request.identityKeycloak.ResetPasswordRequest;
@@ -27,6 +27,16 @@ public class AuthController {
     private boolean keycloakEnabled;
     private final ServiceStrategy serviceStrategy;
     private AuthService authService;
+
+    @GetMapping("/")
+    public String home() {
+        return "Welcome to IAM service";
+    }
+
+    @GetMapping("/secured")
+    public String secured() {
+        return "Welcome to secured IAM service";
+    }
 
     @PostConstruct
     public void init() {
@@ -175,4 +185,8 @@ public class AuthController {
                 .build();
     }
 
+    @GetMapping("/login-success")
+        public String loginSuccess() {
+            return "Login successfully";
+        }
 }

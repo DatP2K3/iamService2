@@ -2,10 +2,15 @@ package com.evotek.iam.service.common;
 
 import com.evotek.iam.dto.request.*;
 import com.evotek.iam.dto.request.identityKeycloak.ResetPasswordRequest;
+import com.evotek.iam.dto.response.PageApiResponse;
 import com.evotek.iam.dto.response.PageResponse;
+import com.evotek.iam.dto.response.TokenResponse;
 import com.evotek.iam.dto.response.UserResponse;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public interface UserService {
@@ -19,9 +24,11 @@ public interface UserService {
 
     void lockUser(String user_id, boolean locked);
 
-    PageResponse search(String keyword, int pageIndex, int pageSize, String sortBy);
+    List<UserResponse> search(UserSearchRequest userSearchRequest);
 
     UserResponse createAdminister(@Valid UserRequest userRequest);
 
     void changePassword(String username, PasswordRequest passwordRequest);
+
+    TokenResponse processOAuthPostLogin(Authentication authentication);
 }

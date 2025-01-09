@@ -1,5 +1,6 @@
 package com.evotek.iam.repository;
 
+import com.evotek.iam.dto.request.UserSearchRequest;
 import com.evotek.iam.model.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -15,13 +16,13 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
     private EntityManager entityManager;
 
     @Override
-    public List<User> search(String keyword, int pageIndex, int pageSize, String sortBy) {
+    public List<User> search(UserSearchRequest userSearchRequest) {
         Map<String, Object> values = new HashMap<>();
-        String sql = "select e from User e " + createWhereQuery(keyword, values) + createOrderQuery(sortBy);
+        String sql = "select e from User e " + createWhereQuery(userSearchRequest.getKeyword(), values) + createOrderQuery(userSearchRequest.getSortBy());
         Query query = entityManager.createQuery(sql, User.class);
         values.forEach(query::setParameter);
-        query.setFirstResult((pageIndex - 1) * pageSize);
-        query.setMaxResults(pageSize);
+        query.setFirstResult((userSearchRequest.getPageIndex() - 1) * userSearchRequest.getPageSize());
+        query.setMaxResults(userSearchRequest.getPageSize());
         return query.getResultList();
     }
 

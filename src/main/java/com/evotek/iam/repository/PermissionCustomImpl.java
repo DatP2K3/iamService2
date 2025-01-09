@@ -1,5 +1,6 @@
 package com.evotek.iam.repository;
 
+import com.evotek.iam.dto.request.PermissionSearchRequest;
 import com.evotek.iam.model.Permission;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -14,13 +15,13 @@ public class PermissionCustomImpl implements PermissionCustom {
     private EntityManager entityManager;
 
     @Override
-    public List<Permission> search(String keyword, int pageIndex, int pageSize, String sortBy) {
+    public List<Permission> search(PermissionSearchRequest permissionSearchRequest) {
         Map<String, Object> values = new HashMap<>();
-        String sql = "select p from Permission p " + createWhereQuery(keyword, values);
+        String sql = "select p from Permission p " + createWhereQuery(permissionSearchRequest.getKeyword(), values);
         Query query = entityManager.createQuery(sql, Permission.class);
         values.forEach(query::setParameter);
-        query.setFirstResult((pageIndex - 1) * pageSize);
-        query.setMaxResults(pageSize);
+        query.setFirstResult((permissionSearchRequest.getPageIndex() - 1) * permissionSearchRequest.getPageSize());
+        query.setMaxResults(permissionSearchRequest.getPageSize());
         return query.getResultList();
     }
 

@@ -19,8 +19,8 @@ public class User {
     @Column(name = "self_user_id")
     private int selfUserID;
 
-    @Column(name = "keycloak_user_id", unique = true)
-    private String keyCloakUserID;
+    @Column(name = "provider_id", unique = true)
+    private String providerId;
 
     @Column(name = "username", nullable = false, unique = true)
     private String username;
@@ -43,8 +43,8 @@ public class User {
     @Column(name="deleted", nullable = false)
     private boolean deleted = false;
 
-    @Column(name = "root")
-    private boolean root = false;
+    @Column(name = "provider")
+    private String provider;
 
     @CreatedBy
     @Column(name = "created_by", updatable = false)

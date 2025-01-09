@@ -1,5 +1,10 @@
 package com.evotek.iam.configuration;
 
+import com.evotek.iam.dto.response.TokenResponse;
+import com.evotek.iam.service.common.UserService;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,14 +17,18 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import java.io.IOException;
 import java.util.Optional;
 
 @Configuration
@@ -28,8 +37,12 @@ import java.util.Optional;
 public class IamSecurityConfig {
     private final JwtDecoder jwtDecoder;
     private final CustomPermissionEvaluator customPermissionEvaluator;
-
+    @Autowired
+    private UserService userService;
     @Value("${auth.keycloak-enabled}") boolean keycloakEnabled;
+    private final String[] PUBLIC_ENDPOINTS = {
+            "/api/users", "/api/auth/login_iam", "api/auth/verify-otp", "/api/auth/forgot-password", "/api/auth/reset-password", "/oauth/**"
+    };
     @Autowired
     public IamSecurityConfig(
             @Value("${auth.keycloak-enabled}") boolean keycloakEnabled,
@@ -59,7 +72,8 @@ public class IamSecurityConfig {
         httpSecurity
                 .authorizeHttpRequests(request ->
                         request
-                                .anyRequest().permitAll()
+                                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                                .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
                 .oauth2ResourceServer(oauth2 ->
@@ -73,14 +87,31 @@ public class IamSecurityConfig {
         httpSecurity
                 .authorizeHttpRequests(request ->
                         request
-                                .anyRequest().permitAll()
+                                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                                .anyRequest().authenticated()
                 )
+                .oauth2Login(oauth2Login -> oauth2Login
+                        .failureHandler(new SimpleUrlAuthenticationFailureHandler())
+                        .successHandler(new AuthenticationSuccessHandler() {
+                            @Override
+                            public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                                                Authentication authentication) throws IOException, ServletException {
+                                System.out.println("AuthenticationSuccessHandler invoked");
+                                System.out.println("Authentication name: " + authentication.getName());
+                                TokenResponse tokenResponse = userService.processOAuthPostLogin(authentication);
+                                response.setContentType("application/json");
+                                response.setCharacterEncoding("UTF-8");
+                                response.getWriter().write(tokenResponse.toString());
+                            }
+                        })
+                )
+                .formLogin(Customizer.withDefaults())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(jwtDecoder)
                         .jwtAuthenticationConverter(jwtAuthenticationConverter())
                 ))
                 .exceptionHandling(exceptionHandlingConfigurer ->
-                        exceptionHandlingConfigurer.authenticationEntryPoint(new JwtAuthenticationEntryPoint())) // Cấu hình entry point cho JWT
+                        exceptionHandlingConfigurer.authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
                 .csrf(AbstractHttpConfigurer::disable);
     }
 
@@ -116,4 +147,5 @@ public class IamSecurityConfig {
         expressionHandler.setPermissionEvaluator(customPermissionEvaluator);
         return expressionHandler;
     }
+
 }
