@@ -18,20 +18,26 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     public void commence(
             HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
             throws IOException {
-        ErrorCode errorCode = ErrorCode.UNAUTHENTICATED;
+        String authHeader = request.getHeader("Authorization");
 
-        response.setStatus(errorCode.getStatusCode().value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            response.sendRedirect("/oauth2/authorization/google");
+        } else {
+            ErrorCode errorCode = ErrorCode.UNAUTHENTICATED;
 
-        ApiResponses<?> apiResponses = ApiResponses.builder()
-                .code(errorCode.getCode())
-                .message(errorCode.getMessage())
-                .success(false)
-                .timestamp(System.currentTimeMillis())
-                .status("error")
-                .build();
+            response.setStatus(errorCode.getStatusCode().value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        response.getWriter().write(objectMapper.writeValueAsString(apiResponses));
-        response.flushBuffer();
+            ApiResponses<?> apiResponses = ApiResponses.builder()
+                    .code(errorCode.getCode())
+                    .message(errorCode.getMessage())
+                    .success(false)
+                    .timestamp(System.currentTimeMillis())
+                    .status("error")
+                    .build();
+
+            response.getWriter().write(objectMapper.writeValueAsString(apiResponses));
+            response.flushBuffer();
+        }
     }
 }

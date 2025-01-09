@@ -2,7 +2,7 @@ package com.evotek.iam.service.common;
 
 import com.evotek.iam.dto.request.*;
 import com.evotek.iam.dto.request.identityKeycloak.*;
-import com.evotek.iam.dto.response.PageApiResponse;
+import com.evotek.iam.dto.response.TokenResponse;
 import com.evotek.iam.dto.response.UserResponse;
 import com.evotek.iam.exception.AppException;
 import com.evotek.iam.exception.ErrorCode;
@@ -15,11 +15,14 @@ import com.evotek.iam.repository.IdentityClient;
 import com.evotek.iam.repository.RoleRepository;
 import com.evotek.iam.repository.UserRepository;
 import com.evotek.iam.repository.UserRoleRepository;
+import com.evotek.iam.service.self_idp.SelfIDPAuthService;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -35,11 +38,13 @@ public class UserServiceImpl implements UserService {
     private final IdentityClient identityClient;
     private final ErrorNormalizer errorNormalizer;
     private final EmailService emailService;
+    private final SelfIDPAuthService selfIDPAuthService;
 
     @Value("${idp.client-id}")
     private String clientId;
     @Value("${idp.client-secret}")
     private String clientSecret;
+    @Value("${auth.keycloak-enabled}") boolean keycloakEnabled;
 
     @Override
     public UserResponse getUserInfo(String username) {
@@ -79,6 +84,11 @@ public class UserServiceImpl implements UserService {
             user.setProviderId(userId);
             String password = passwordEncoder.encode(user.getPassword());
             user.setPassword(password);
+            if(keycloakEnabled) {
+                user.setProvider("keycloak");
+            } else {
+                user.setProvider("self_idp");
+            }
             user = userRepository.save(user);
             Role role = roleRepository.findByName("ROLE_USER").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
             UserRole userRole = UserRole.builder()
@@ -124,7 +134,11 @@ public class UserServiceImpl implements UserService {
             user.setProviderId(userId);
             String password = passwordEncoder.encode(user.getPassword());
             user.setPassword(password);
-
+            if(keycloakEnabled) {
+                user.setProvider("keycloak");
+            } else {
+                user.setProvider("self_idp");
+            }
             Role role = roleRepository.findByName(userRequest.getRole()).orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
 
             user = userRepository.save(user);
@@ -168,7 +182,38 @@ public class UserServiceImpl implements UserService {
             throw errorNormalizer.handleKeyCloakException(e);
         }
     }
+    public TokenResponse processOAuthPostLogin(Authentication authentication) {
+        OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+        String email = oauth2User.getAttribute("email");
+        User existUser = userRepository.findByEmail(email).orElse(null);
 
+        if (existUser == null) {
+            User newUser = User.builder()
+                    .providerId(oauth2User.getAttribute("sub"))
+                    .username(email)
+                    .email(email)
+                    .firstName(oauth2User.getAttribute("family_name"))
+                    .lastName(oauth2User.getAttribute("name"))
+                    .locked(false)
+                    .deleted(false)
+                    .provider("google")
+                    .build();
+            userRepository.save(newUser);
+            Role role = roleRepository.findByName("ROLE_USER").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_EXISTED));
+            UserRole userRole = UserRole.builder()
+                    .userId(newUser.getSelfUserID())
+                    .roleId(role.getId())
+                    .build();
+            userRoleRepository.save(userRole);
+            var accessToken = selfIDPAuthService.generateToken(newUser, false, false);
+            var refreshToken = selfIDPAuthService.generateToken(newUser, false, true);
+            System.out.println("Created new user: " + email);
+            return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
+        }
+            var accessToken = selfIDPAuthService.generateToken(existUser, false, false);
+            var refreshToken = selfIDPAuthService.generateToken(existUser, false, true);
+            return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
+    }
     private String extractUserId(ResponseEntity<?> response) {
         String location = response.getHeaders().get("Location").getFirst();
         String[] splitedStr = location.split("/");

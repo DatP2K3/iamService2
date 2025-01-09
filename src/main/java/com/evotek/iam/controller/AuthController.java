@@ -28,6 +28,16 @@ public class AuthController {
     private final ServiceStrategy serviceStrategy;
     private AuthService authService;
 
+    @GetMapping("/")
+    public String home() {
+        return "Welcome to IAM service";
+    }
+
+    @GetMapping("/secured")
+    public String secured() {
+        return "Welcome to secured IAM service";
+    }
+
     @PostConstruct
     public void init() {
         if (!keycloakEnabled) {
@@ -175,4 +185,8 @@ public class AuthController {
                 .build();
     }
 
+    @GetMapping("/login-success")
+        public String loginSuccess() {
+            return "Login successfully";
+        }
 }

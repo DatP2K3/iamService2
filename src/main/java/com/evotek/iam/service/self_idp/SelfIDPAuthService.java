@@ -110,7 +110,7 @@ public class SelfIDPAuthService implements AuthService {
         return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
     }
 
-    private String generateToken(User user, boolean isforgotPassword, boolean isRefresh) {
+    public String generateToken(User user, boolean isforgotPassword, boolean isRefresh) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.RS256);
 
         JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()

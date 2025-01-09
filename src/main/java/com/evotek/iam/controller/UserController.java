@@ -6,7 +6,6 @@ import com.evotek.iam.dto.request.UpdateUserRequest;
 import com.evotek.iam.dto.request.UserRequest;
 import com.evotek.iam.dto.request.UserSearchRequest;
 import com.evotek.iam.dto.response.PageApiResponse;
-import com.evotek.iam.dto.response.PageResponse;
 import com.evotek.iam.dto.response.UserResponse;
 import com.evotek.iam.service.common.UserServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,7 +24,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
     private final UserServiceImpl userService;
-
 
     @Operation(summary = "Tạo mới người dùng",
             description = "API này sẽ tạo mới một người dùng trong hệ thống và trả về thông tin.",

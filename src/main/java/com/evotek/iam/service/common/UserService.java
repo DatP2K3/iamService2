@@ -4,8 +4,10 @@ import com.evotek.iam.dto.request.*;
 import com.evotek.iam.dto.request.identityKeycloak.ResetPasswordRequest;
 import com.evotek.iam.dto.response.PageApiResponse;
 import com.evotek.iam.dto.response.PageResponse;
+import com.evotek.iam.dto.response.TokenResponse;
 import com.evotek.iam.dto.response.UserResponse;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,4 +29,6 @@ public interface UserService {
     UserResponse createAdminister(@Valid UserRequest userRequest);
 
     void changePassword(String username, PasswordRequest passwordRequest);
+
+    TokenResponse processOAuthPostLogin(Authentication authentication);
 }
